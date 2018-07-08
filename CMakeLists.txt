@@ -71,6 +71,8 @@ set(SOURCE_FILES
         src/monosat/Version.cpp
         src/monosat/amo/AMOParser.h
         src/monosat/amo/AMOTheory.h
+        src/monosat/subset/SubsetParser.h
+        src/monosat/subset/SubsetTheory.h
         src/monosat/api/Circuit.h
         src/monosat/api/Monosat.cpp
         src/monosat/api/Monosat.h

@@ -51,6 +51,7 @@
 #include "bv/BVParser.h"
 #include "amo/AMOTheory.h"
 #include "amo/AMOParser.h"
+#include "subset/SubsetParser.h"
 #include "core/Optimize.h"
 #include "core/Config.h"
 #include "pb/Config_pb.h"
@@ -630,7 +631,8 @@ int main(int argc, char** argv) {
 		AMOParser<char *, SimpSolver> amo;
 		parser.addParser(&amo);
 
-
+		SubsetParser<char *, SimpSolver> subset;
+		parser.addParser(&subset);
 
 
 		// Change to signal-handlers that will only notify the solver and allow it to terminate
