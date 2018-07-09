@@ -1165,6 +1165,28 @@ JNIEXPORT void JNICALL Java_monosat_MonosatJNI_flushPB
 }
 
 
+JNIEXPORT jlong JNICALL Java_monosat_MonosatJNI_newSubset
+        (JNIEnv *env, jclass monosat_class, jlong solverPtr, jobject literals,jint n_args) try {
+    SolverPtr solver = reinterpret_cast<SolverPtr>(solverPtr);
+    SubsetPtr subsetPtr = newSubset(solver, (int *) env->GetDirectBufferAddress(literals),n_args);
+    return reinterpret_cast<jlong>(subsetPtr);
+}catch(...) {
+    javaThrow(env);
+    return 0;
+}
+
+
+JNIEXPORT jint JNICALL Java_monosat_MonosatJNI_subsetAtMost
+        (JNIEnv *env, jclass monosat_class, jlong solverPtr,jlong subsetPtr, jobject literals,jint n_args)try {
+    SolverPtr solver = reinterpret_cast<SolverPtr>(solverPtr);
+    SubsetPtr subset = reinterpret_cast<SubsetPtr>(subsetPtr);
+    return subsetAtMost(solver,subset,(int *) env->GetDirectBufferAddress(literals),n_args);
+}catch(...) {
+    javaThrow(env);
+    return 0;
+}
+
+
 JNIEXPORT jlong JNICALL Java_monosat_MonosatJNI_newGraph
         (JNIEnv *env, jclass monosat_class, jlong solverPtr) try {
     SolverPtr solver = reinterpret_cast<SolverPtr>(solverPtr);

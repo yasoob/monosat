@@ -913,6 +913,22 @@ JNIEXPORT void JNICALL Java_monosat_MonosatJNI_flushPB
 
 /*
  * Class:     monosat_MonosatJNI
+ * Method:    newSubset
+ * Signature: (JLjava/nio/IntBuffer;I)J
+ */
+JNIEXPORT jlong JNICALL Java_monosat_MonosatJNI_newSubset
+  (JNIEnv *, jclass, jlong, jobject, jint);
+
+/*
+ * Class:     monosat_MonosatJNI
+ * Method:    subsetAtMost
+ * Signature: (JJLjava/nio/IntBuffer;I)I
+ */
+JNIEXPORT jint JNICALL Java_monosat_MonosatJNI_subsetAtMost
+  (JNIEnv *, jclass, jlong, jlong, jobject, jint);
+
+/*
+ * Class:     monosat_MonosatJNI
  * Method:    newGraph
  * Signature: (J)J
  */

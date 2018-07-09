@@ -374,6 +374,11 @@ final class MonosatJNI { // package level access specifier
   // Convert any pb constraints in the solver into cnf (will be called automatically before solve())
   public static native void flushPB(long solverPtr);
 
+  public static native long newSubset(long solverPtr,IntBuffer literals, int n_args);
+
+  public static native int subsetAtMost(long solverPtr, long subsetPtr ,IntBuffer
+          literals,int n_args);
+
   // theory interface for graphs
   public static native long newGraph(long solverPtr);
 

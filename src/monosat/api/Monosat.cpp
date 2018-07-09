@@ -27,12 +27,14 @@
 #include "monosat/fsm/FSMTheory.h"
 #include "monosat/pb/PbTheory.h"
 #include "monosat/amo/AMOTheory.h"
+#include "monosat/subset/SubsetTheory.h"
 #include "Monosat.h"
 #include "monosat/core/Dimacs.h"
 #include "monosat/bv/BVParser.h"
 #include "monosat/graph/GraphParser.h"
 #include "monosat/pb/PbParser.h"
 #include "monosat/amo/AMOParser.h"
+#include "monosat/subset/SubsetParser.h"
 #include "monosat/core/Optimize.h"
 #include "monosat/pb/PbSolver.h"
 #include "monosat/routing/FlowRouter.h"
@@ -517,6 +519,9 @@ Monosat::SimpSolver * newSolver_args(int argc,  char**argv){
 
 		AMOParser<char *, SimpSolver> * amo = new AMOParser<char *, SimpSolver>();
 		parser->addParser(amo);
+
+		SubsetParser<char *, SimpSolver> * subset = new SubsetParser<char *, SimpSolver>();
+		parser->addParser(subset);
 
 		((MonosatData*)S->_external_data)->parser = parser;
 		S->setVarMap(parser);
@@ -1537,6 +1542,43 @@ void flushPB(Monosat::SimpSolver * S){
 	if (d->pbsolver) {
 		d->pbsolver->convert();
 	}
+}
+
+
+Monosat::SubsetTheory * newSubset(Monosat::SimpSolver * S, int * literals,int n_args){
+	SubsetTheory * subset = new SubsetTheory(S);
+	vec<Lit> args;
+	for (int i = 0;i<n_args;i++){
+		args.push(internalLit(S,literals[i]));
+	}
+
+	write_out(S,"subset ");
+	for(Lit l:args){
+		write_out(S,"%d ",dimacs(S,l));
+	}
+	write_out(S,"0\n");
+
+	subset->setLits(args);
+	return subset;
+}
+
+int subsetAtMost(Monosat::SimpSolver * S,  Monosat::SubsetTheory * subset, int * literals,int n_args){
+	assert(subset);
+	vec<Lit> args;
+    Var v = S->newVar();
+    Lit c =mkLit(v);
+	for (int i = 0;i<n_args;i++){
+		args.push(internalLit(S,literals[i]));
+	}
+
+	write_out(S,"subset atmost %d ", dimacs(S,c));
+
+	for(Lit l:args){
+		write_out(S,"%d ",dimacs(S,l));
+	}
+	write_out(S,"0\n");
+	subset->addAtMostConstraint(c,args);
+	return externalLit(S,c);
 }
 
 const char * ineqToStr(PB::Ineq ineq){

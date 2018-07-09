@@ -33,6 +33,7 @@
 #include "monosat/fsm/FSMTheory.h"
 #include "monosat/pb/PbTheory.h"
 #include "monosat/amo/AMOTheory.h"
+#include "monosat/subset/SubsetTheory.h"
 #include "Monosat.h"
 #include "monosat/core/Dimacs.h"
 #include "monosat/bv/BVParser.h"
@@ -49,6 +50,7 @@ typedef Monosat::GraphTheorySolver<double>*  GraphTheorySolver_double;
 typedef Monosat::BVTheorySolver<int64_t>* BVTheoryPtr;
 typedef Monosat::FSMTheorySolver * FSMTheorySolverPtr;
 typedef Monosat::FlowRouter<int64_t> * FlowRouterPtr;
+typedef Monosat::SubsetTheory *  SubsetPtr;
 typedef int64_t Weight;
 #else
 #include <stdbool.h>
@@ -58,6 +60,7 @@ typedef void *  GraphTheorySolver_long;
 typedef void *  GraphTheorySolver_double;
 typedef void *  FSMTheorySolverPtr;
 typedef void *  FlowRouterPtr;
+typdef void * SubsetPtr;
 typedef int Var;
 typedef int64_t Weight;
 #endif
@@ -298,6 +301,10 @@ void bv_unary(SolverPtr S, BVTheoryPtr bv, int * args, int n_args, int resultID)
   void assertPB_gt(SolverPtr S, int rhs, int n_args, int * literals, int * coefficients);
   //Convert any pb constraints in the solver into cnf (will be called automatically before solve())
   void flushPB(SolverPtr S);
+
+  SubsetPtr newSubset(SolverPtr S, int * literals, int n_args);
+
+  int subsetAtMost(SolverPtr S, SubsetPtr subsetPtr, int * literals,int n_args);
   //theory interface for graphs
 
   GraphTheorySolver_long newGraph(SolverPtr S);
