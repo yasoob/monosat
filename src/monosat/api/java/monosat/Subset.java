@@ -35,11 +35,10 @@ public final class Subset {
   private final long subsetPtr;
 
   /**
-   * Instantiate a subset in solver.
+   * Instantiate a new subset in solver.
    * A subset is a collection of literals, some or all of which may be true.
-   * AtMost constraints allow the set of true literals from among the subset
-   * to be conditionally restricted.
-   *
+   * AtMost constraints allow the set of true literals from that set to be
+   * conditionally restricted.
    * @param solver The solver instance in which to create this subset.
    */
   public Subset(Solver solver, Collection<Lit> subset) {
@@ -48,9 +47,9 @@ public final class Subset {
   }
 
   /**
-   * Returns a literal that is true only if no literals in the subset but outside of `lits` are true.
-   * This condition is one-sided; the returned literal does not need to be true if
-   * some or all of the literals in 'lits' are true.
+   * Returns a literal that is true only if no literals in the subset outside of `lits` are true.
+   * Does not require any of the literals in lits to be true.
+   *
    * @param lits A collection of literals that belong to the subset, at most one of which may be true if the returned
    *             literal is true.
    * @return A literal that is true only if no literals in the subset but outside of `lits` are true.
