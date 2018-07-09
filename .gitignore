@@ -10,6 +10,8 @@
 /src/monosat/api/cython/build
 /src/monosat/api/cython/cython_debug
 /src/monosat/api/java/build
+/src/monosat/api/java/.idea
+/src/monosat/api/java/out
 Release/*
 Release2/*
 MinSizeRel/*
@@ -45,8 +47,8 @@ cmake_install.cmake
 libmonosat.a
 libmonosat.dylib
 libmonosat.so
-monosat
 monosat.jar
-monosat
 monosat_javadoc.zip
-
+.idea
+build
+/tests/
