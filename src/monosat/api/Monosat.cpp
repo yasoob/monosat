@@ -1535,6 +1535,24 @@ void at_most_one(Monosat::SimpSolver * S, int * vars, int n_vars){
 		}
 	}
 }
+//simple at-most-one constraint: asserts that at most one of the set of ltierals may be true.
+//for small numbers of variables, consider using a direct CNF encoding instead
+void at_most_one_lit(Monosat::SimpSolver * S, int * literals, int n_lits){
+    if(n_lits>1){
+        write_out(S,"amo");
+        for(int i = 0;i<n_lits;i++){
+            Lit l = internalLit(S,literals[i]);
+            write_out(S," %d",dimacs(S,l));
+        }
+
+        write_out(S," 0\n");
+        AMOTheory* amo = new  AMOTheory(S);
+        for(int i = 0;i<n_lits;i++){
+            Lit l = internalLit(S,literals[i]);
+            amo->addLit(l);
+        }
+    }
+}
 
 void flushPB(Monosat::SimpSolver * S){
 	MonosatData *d = (MonosatData *) S->_external_data;

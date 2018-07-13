@@ -40,11 +40,25 @@ public final class Subset {
    * AtMost constraints allow the set of true literals from that set to be
    * conditionally restricted.
    * @param solver The solver instance in which to create this subset.
+   * @param lits A collection of literals from which a subset will be chosen to be true.
    */
-  public Subset(Solver solver, Collection<Lit> subset) {
+  public Subset(Solver solver, Collection<Lit> lits) {
     this.solver = solver;
-    this.subsetPtr = MonosatJNI.newSubset(solver.getSolverPtr(),solver.getLitBuffer(subset),subset.size());
+    this.subsetPtr = MonosatJNI.newSubset(solver.getSolverPtr(),solver.getLitBuffer(lits),lits.size());
   }
+
+    /**
+     * Instantiate a new subset in solver.
+     * A subset is a collection of literals, some or all of which may be true.
+     * AtMost constraints allow the set of true literals from that set to be
+     * conditionally restricted.
+     * @param solver The solver instance in which to create this subset.
+     * @param lits A collection of literals from which a subset will be chosen to be true.
+     */
+    public Subset(Solver solver, Lit... lits) {
+        this.solver = solver;
+        this.subsetPtr = MonosatJNI.newSubset(solver.getSolverPtr(),solver.getLitBuffer(lits,0),lits.length);
+    }
 
   /**
    * Returns a literal that is true only if no literals in the subset outside of `lits` are true.
@@ -60,4 +74,16 @@ public final class Subset {
   }
 
 
+    /**
+     * Returns a literal that is true only if no literals in the subset outside of `lits` are true.
+     * Does not require any of the literals in lits to be true.
+     *
+     * @param lits A collection of literals that belong to the subset, at most one of which may be true if the returned
+     *             literal is true.
+     * @return A literal that is true only if no literals in the subset but outside of `lits` are true.
+     */
+    Lit atMost(Lit... lits){
+        return  solver.toLit(MonosatJNI.subsetAtMost(solver.getSolverPtr(), subsetPtr,solver.getLitBuffer(lits,0),
+                lits.length));
+    }
 }

@@ -422,10 +422,10 @@ public:
 			//handle the True literal specially, so that all the theories can share it...
 			return;
 		}
-		if (hasTheory(solverVar)) {
-			throw std::runtime_error("Variable used for multiple atoms.");
+		if (theoryHasVar(solverVar, theories[theory]) && getTheoryVar(solverVar,theories[theory])!=theoryVar) {
+			throw std::runtime_error("Variable used for multiple atoms in one theory.");
 		}
-		assert(!hasTheory(solverVar));
+		//assert(!hasTheory(solverVar));
 		int theoryN = theory_vars[solverVar].theories.size();
         theory_vars[solverVar].theories.push({theory,theoryVar});
         theory_vars[solverVar].theoryMap.insert(theory,theoryVar,var_Undef);

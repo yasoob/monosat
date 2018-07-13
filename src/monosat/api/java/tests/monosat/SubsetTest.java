@@ -43,7 +43,7 @@ public class SubsetTest {
     Lit c = new Lit(solver);
     Lit result = Logic.xnor(a, b, c);
     assertTrue(solver.solve());
-    // An empty AMO call should have no effect
+
     Subset subset = new Subset(solver,Arrays.asList(a,b,c));
     Lit d = subset.atMost(Arrays.asList(a,b));
     assertTrue(solver.solve());
@@ -65,6 +65,39 @@ public class SubsetTest {
     assertFalse(solver.solve(a,b));
 
   }
+    @Test
+    public void test_SubsetAMO() {
+        Solver solver = new Solver();
+        Lit a = new Lit(solver);
+        Lit b = new Lit(solver);
+        Lit c = new Lit(solver);
+        Lit result = Logic.xnor(a, b, c);
+        assertTrue(solver.solve());
+
+        Subset subset = new Subset(solver,a,b,c);
+        Lit d = subset.atMost(Arrays.asList(a,b));
+        Logic.assertAtMostOne(a,b,c);
+        assertTrue(solver.solve());
+        solver.addClause(d);
+        assertTrue(solver.solve());
+        assertFalse(solver.solve(c));
+        assertTrue(solver.solve(a));
+        assertTrue(solver.solve(a.not(),b));
+        assertTrue(solver.solve(a));
+        assertTrue(solver.solve(b));
+        assertFalse(solver.solve(a,b));
+        assertFalse(solver.solve(a,b,c));
+
+        solver.addClause(subset.atMost(Arrays.asList(a,c)));
+        assertTrue(solver.solve());
+        assertFalse(solver.solve(c));
+        assertFalse(solver.solve(b));
+        assertTrue(solver.solve(a));
+        assertFalse(solver.solve(a.not(),b));
+        assertTrue(solver.solve(a,b.not()));
+        assertFalse(solver.solve(a,b));
+
+    }
 
 
 }

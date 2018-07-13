@@ -1092,10 +1092,10 @@ JNIEXPORT void JNICALL Java_monosat_MonosatJNI_bv_1unary
 }
 
 
-JNIEXPORT void JNICALL Java_monosat_MonosatJNI_at_1most_1one
+JNIEXPORT void JNICALL Java_monosat_MonosatJNI_at_1most_1one_1lit
         (JNIEnv *env, jclass monosat_class, jlong solverPtr, jobject array, jint n_args) try {
     SolverPtr solver = reinterpret_cast<SolverPtr>(solverPtr);
-    at_most_one(solver, (int *) env->GetDirectBufferAddress(array), n_args);
+    at_most_one_lit(solver, (int *) env->GetDirectBufferAddress(array), n_args);
 }catch(...) { 
     javaThrow(env);
 }

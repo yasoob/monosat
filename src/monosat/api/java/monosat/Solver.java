@@ -1387,16 +1387,7 @@ public final class Solver implements Closeable {
       // rather than introduce an amo theory
       MonosatJNI.AssertAMO(getSolverPtr(), getLitBuffer(args), args.size());
     } else {
-      // workaround for internal limitations in monosat which require the
-      // amo constraints to operate only on variables (not literals), which must also not have been
-      // used elsewhere
-      ArrayList<Integer> vars = new ArrayList<Integer>();
-      for (Lit l : args) {
-        Lit l2 = new Lit(this, false);
-        assertEqual(l, l2);
-        vars.add(l2.toVar());
-      }
-      MonosatJNI.at_most_one(getSolverPtr(), getIntBuffer(vars, 0), args.size());
+      MonosatJNI.at_most_one_lit(getSolverPtr(), getLitBuffer(args, 0), args.size());
     }
   }
 
