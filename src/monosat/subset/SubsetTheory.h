@@ -304,7 +304,7 @@ public:
 	}
 	void printStats(int detailLevel) override {
 
-		printf("AMO Theory %d stats:\n", this->getTheoryIndex());
+		printf("Subset Theory %d stats:\n", this->getTheoryIndex());
 
 		printf("Propagations: %" PRId64 " (%f s, avg: %f s, %" PRId64 " skipped,  %" PRId64 " lits)\n", stats_propagations, propagationtime,
 			   (propagationtime) / ((double) stats_propagations + 1), stats_propagations_skipped, stats_lit_propagations);

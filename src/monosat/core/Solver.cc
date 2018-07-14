@@ -1081,12 +1081,6 @@ void Solver::enqueueLazy(Lit p, int lev, CRef from){
 
 void Solver::uncheckedEnqueue(Lit p, CRef from) {
 	assert(value(p) == l_Undef);
-	if(toInt(p)==46){
-	    int a=1;
-	}
-    if(toInt(p)==47){
-        int a=1;
-    }
 	assigns[var(p)] = lbool(!sign(p));
 	vardata[var(p)] = mkVarData(from, decisionLevel());
 	trail.push_(p);

@@ -27,12 +27,20 @@ import java.util.stream.Collectors;
 
 /**
  * Supports reasoning about subsets of a finite set of literals.
+ * The intended use-case of this class is to assert that,
+ * from among a set of literals, `atMost` some subset of those
+ * literals may be true.
+ *
+ * This can be combined with clauses, pseudo-Boolean constraints,
+ * and at-most-one constraints to provide more fully-featured capabilities.
  */
-public final class Subset {
+public final class Subset implements Iterable<Lit> {
   /** The solver instance this Subset belongs to. */
   private final Solver solver;
   /** A handle to this Subset in the native library. */
   private final long subsetPtr;
+
+  private final List<Lit> lits;
 
   /**
    * Instantiate a new subset in solver.
@@ -45,6 +53,7 @@ public final class Subset {
   public Subset(Solver solver, Collection<Lit> lits) {
     this.solver = solver;
     this.subsetPtr = MonosatJNI.newSubset(solver.getSolverPtr(),solver.getLitBuffer(lits),lits.size());
+    this.lits = new ArrayList<>(lits);
   }
 
     /**
@@ -58,7 +67,19 @@ public final class Subset {
     public Subset(Solver solver, Lit... lits) {
         this.solver = solver;
         this.subsetPtr = MonosatJNI.newSubset(solver.getSolverPtr(),solver.getLitBuffer(lits,0),lits.length);
+        this.lits = new ArrayList<Lit>(Arrays.asList(lits));
     }
+
+    /**
+     * Get the nth literal from this subset
+     * @param n The index of the literal to retrieve
+     * @return The nth literal in the subset
+     */
+    Lit get(int n){
+        return lits.get(n);
+    }
+
+
 
   /**
    * Returns a literal that is true only if no literals in the subset outside of `lits` are true.
@@ -85,5 +106,10 @@ public final class Subset {
     Lit atMost(Lit... lits){
         return  solver.toLit(MonosatJNI.subsetAtMost(solver.getSolverPtr(), subsetPtr,solver.getLitBuffer(lits,0),
                 lits.length));
+    }
+
+    @Override
+    public Iterator<Lit> iterator() {
+        return lits.iterator();
     }
 }
