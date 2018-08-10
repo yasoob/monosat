@@ -2302,11 +2302,9 @@ public final class Solver implements Closeable {
   public void assertImpliesOr(Lit a, Collection<Lit> args) {
     validate(a);
     validate(args);
-    if(args.size()==0){
-      //do nothing
-    }else {
+
       MonosatJNI.AssertImpliesOr(this.getSolverPtr(), a.toInt(), this.getLitBuffer(args), args.size());
-    }
+
   }
   /**
    * Assert that a implies that at least one element of args is true

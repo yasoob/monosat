@@ -251,7 +251,7 @@ public final class Logic {
             allFalse = false;
           }
         }
-        if(!allFalse) {
+        if(!allFalse || args.size()==0) {
           return Lit.False;
         }
       }
@@ -279,7 +279,7 @@ public final class Logic {
             allFalse = false;
           }
         }
-        if(!allFalse) {
+        if(!allFalse || args.length==0) {
           return Lit.False;
         }
       }
@@ -1032,7 +1032,7 @@ public final class Logic {
             allFalse = false;
           }
         }
-        if(allFalse) {
+        if(allFalse || args.size()==0) {
           contradiction();
         }
       }
@@ -1056,7 +1056,7 @@ public final class Logic {
             allFalse = false;
           }
         }
-        if(allFalse) {
+        if(allFalse || args.length==0) {
           contradiction();
         }
       }
