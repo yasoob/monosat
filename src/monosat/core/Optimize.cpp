@@ -1757,8 +1757,8 @@ lbool minimizeCore(SimpSolver & S,vec<Lit> & assumptions,bool do_simp){
 	int i, j = 0;
 	for (i = 0; i < assumptions.size(); i++) {
 		assert(assumptions[i] != lit_Undef);
-		if (assumptions[i] == trueLit || !S.conflict.contains(~assumptions[i])) {
-
+		if (assumptions[i] == trueLit) {
+            //drop this literal
 		} else {
 			assumptions[j++] = assumptions[i];
 		}

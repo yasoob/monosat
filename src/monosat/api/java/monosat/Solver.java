@@ -1519,7 +1519,7 @@ public final class Solver implements Closeable {
    *
    * @return An iterator over the literals in the solver.
    */
-  public Iterator<Lit> literals() {
+  public Iterable<Lit> literals() {
     return new LitIterator(false);
   }
 
@@ -1529,12 +1529,12 @@ public final class Solver implements Closeable {
    *
    * @return An iterator over the named literals in the solver.
    */
-  public Iterator<Lit> namedLiterals() {
+  public Iterable<Lit> namedLiterals() {
     return new LitIterator(true);
   }
 
   /** An iterator over literals in the solver. */
-  public class LitIterator implements java.util.Iterator<Lit> {
+  public class LitIterator implements java.util.Iterator<Lit>,java.lang.Iterable<Lit> {
     private int index = 0;
 
     final boolean named;
@@ -1568,6 +1568,11 @@ public final class Solver implements Closeable {
     public void remove() {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public Iterator<Lit> iterator() {
+      return this;
+    }
   }
 
   /**
@@ -1576,7 +1581,7 @@ public final class Solver implements Closeable {
    *
    * @return An iterator over the literals in the solver.
    */
-  public Iterator<BitVector> bitvectors() {
+  public Iterable<BitVector> bitvectors() {
     return new BVIterator(false);
   }
 
@@ -1586,12 +1591,12 @@ public final class Solver implements Closeable {
    *
    * @return An iterator over the named literals in the solver.
    */
-  public Iterator<BitVector> namedBitVectors() {
+  public Iterable<BitVector> namedBitVectors() {
     return new BVIterator(true);
   }
 
   /** An iterator over bitvectors in the solver. */
-  public class BVIterator implements java.util.Iterator<BitVector> {
+  public class BVIterator implements java.util.Iterator<BitVector>,java.lang.Iterable<BitVector> {
     private int index = 0;
 
     final boolean named;
@@ -1625,6 +1630,11 @@ public final class Solver implements Closeable {
     @Override
     public void remove() {
       throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<BitVector> iterator() {
+      return this;
     }
   }
   /**
