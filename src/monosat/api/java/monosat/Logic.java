@@ -78,7 +78,7 @@ public final class Logic {
   private static Solver getSolver(Lit... args) {
     for (Lit l : args) {
       if (l == null || l == Lit.Error || l == Lit.Undef) {
-        throw new IllegalArgumentException("Invalid literal " + String.valueOf(l));
+        throw new IllegalArgumentException("Invalid literal: " + String.valueOf(l));
       }
       if (l.solver != null) {
         return l.solver;
@@ -98,7 +98,7 @@ public final class Logic {
   private static Solver getSolver(Iterable<Lit> args) {
     for (Lit l : args) {
       if (l == null || l == Lit.Error || l == Lit.Undef) {
-        throw new IllegalArgumentException("Invalid literal " + String.valueOf(l));
+        throw new IllegalArgumentException("Invalid literal: " + String.valueOf(l));
       }
       if (l.solver != null) {
         return l.solver;
