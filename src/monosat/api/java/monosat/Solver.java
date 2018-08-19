@@ -139,7 +139,6 @@ public final class Solver implements Closeable {
   public Solver(boolean enablePreprocessing) {
     this("", enablePreprocessing);
   }
-
   /**
    * Instantiate a new Solver, with the given list of settings. MonoSAT has many command line
    * options, which can be passed here.
