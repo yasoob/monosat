@@ -780,9 +780,13 @@ public:
 			}
 
 		}
-		if(opt_decide_reach_reverse){
+		if(opt_decide_reach_reverse && drand(random_seed)<opt_decide_theories_reverse_freq){
 			reverse(to_decide.elements());
 			reverse(path_edges.elements());
+			if(opt_print_theory_decisions){
+				printf("(Reversed)");
+			}
+
 		}
 		/*if(opt_print_theory_decisions){
 			printf("Decide path: ");

@@ -2214,7 +2214,6 @@ lbool Solver::search(int nof_conflicts) {
 			// CONFLICT
 			conflicts++;
 			conflictC++;
-
 			if(last_decision_heuristic){
 				n_theory_conflicts++;
 				consecutive_theory_conflicts++;

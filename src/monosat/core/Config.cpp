@@ -275,6 +275,7 @@ BoolOption Monosat::opt_decide_bv_intrinsic(_cat_graph,"decide-bv-intrinsic","",
 BoolOption Monosat::opt_decide_bv_bitwise(_cat_graph,"decide-bv-bitwise","",false);
 BoolOption Monosat::opt_decide_reach_reverse(_cat_graph,"decide-reach-reverse","Decide reachability theories in reverse path order, if theory decisions are enabled",false);
 BoolOption Monosat::opt_decide_theories_reverse(_cat_graph,"decide-theories-reverse","Decide theories in reverse order, if theory decisions are enabled",false);
+DoubleOption Monosat::opt_decide_theories_reverse_freq(_cat_graph,"decide-theories-reverse-freq","Decide theories in reverse order with the given frequency, if decide-theories-reverse is enabled",1, DoubleRange(0, true, 1, true));
 BoolOption Monosat::opt_use_random_path_for_decisions(_cat_graph, "decide-graph-rnd", "", false);
 BoolOption Monosat::opt_use_optimal_path_for_decisions(_cat_graph, "decide-graph-opt",
                                                        "When selecting a path during decisions, find the shortest path, excluding the weight of already assigned edges.",
