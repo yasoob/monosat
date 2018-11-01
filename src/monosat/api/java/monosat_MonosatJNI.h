@@ -105,26 +105,98 @@ JNIEXPORT void JNICALL Java_monosat_MonosatJNI_closeFile
 
 /*
  * Class:     monosat_MonosatJNI
- * Method:    setVariableName
+ * Method:    addLiteralName
  * Signature: (JILjava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_monosat_MonosatJNI_setVariableName
+JNIEXPORT void JNICALL Java_monosat_MonosatJNI_addLiteralName
+  (JNIEnv *, jclass, jlong, jint, jstring);
+
+/*
+ * Class:     monosat_MonosatJNI
+ * Method:    literalHasName
+ * Signature: (JILjava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_monosat_MonosatJNI_literalHasName
+  (JNIEnv *, jclass, jlong, jint, jstring);
+
+/*
+ * Class:     monosat_MonosatJNI
+ * Method:    getLiteralName
+ * Signature: (JII)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_monosat_MonosatJNI_getLiteralName
+  (JNIEnv *, jclass, jlong, jint, jint);
+
+/*
+ * Class:     monosat_MonosatJNI
+ * Method:    literalNameCount
+ * Signature: (JI)I
+ */
+JNIEXPORT jint JNICALL Java_monosat_MonosatJNI_literalNameCount
+  (JNIEnv *, jclass, jlong, jint);
+
+/*
+ * Class:     monosat_MonosatJNI
+ * Method:    hasLiteralWithName
+ * Signature: (JLjava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_monosat_MonosatJNI_hasLiteralWithName
+  (JNIEnv *, jclass, jlong, jstring);
+
+/*
+ * Class:     monosat_MonosatJNI
+ * Method:    nNamedLiterals
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_monosat_MonosatJNI_nNamedLiterals
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     monosat_MonosatJNI
+ * Method:    getNamedLiteralN
+ * Signature: (JI)I
+ */
+JNIEXPORT jint JNICALL Java_monosat_MonosatJNI_getNamedLiteralN
+  (JNIEnv *, jclass, jlong, jint);
+
+/*
+ * Class:     monosat_MonosatJNI
+ * Method:    getLiteral
+ * Signature: (JLjava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_monosat_MonosatJNI_getLiteral
+  (JNIEnv *, jclass, jlong, jstring);
+
+/*
+ * Class:     monosat_MonosatJNI
+ * Method:    addVariableName
+ * Signature: (JILjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_monosat_MonosatJNI_addVariableName
+  (JNIEnv *, jclass, jlong, jint, jstring);
+
+/*
+ * Class:     monosat_MonosatJNI
+ * Method:    variableHasName
+ * Signature: (JILjava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_monosat_MonosatJNI_variableHasName
   (JNIEnv *, jclass, jlong, jint, jstring);
 
 /*
  * Class:     monosat_MonosatJNI
  * Method:    getVariableName
- * Signature: (JI)Ljava/lang/String;
+ * Signature: (JII)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_monosat_MonosatJNI_getVariableName
-  (JNIEnv *, jclass, jlong, jint);
+  (JNIEnv *, jclass, jlong, jint, jint);
 
 /*
  * Class:     monosat_MonosatJNI
- * Method:    variableHasName
- * Signature: (JI)Z
+ * Method:    variableNameCount
+ * Signature: (JI)I
  */
-JNIEXPORT jboolean JNICALL Java_monosat_MonosatJNI_variableHasName
+JNIEXPORT jint JNICALL Java_monosat_MonosatJNI_variableNameCount
   (JNIEnv *, jclass, jlong, jint);
 
 /*
@@ -554,9 +626,17 @@ JNIEXPORT jboolean JNICALL Java_monosat_MonosatJNI_hasBitvectorWithName
 /*
  * Class:     monosat_MonosatJNI
  * Method:    getBitvectorName
- * Signature: (JJI)Ljava/lang/String;
+ * Signature: (JJII)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_monosat_MonosatJNI_getBitvectorName
+  (JNIEnv *, jclass, jlong, jlong, jint, jint);
+
+/*
+ * Class:     monosat_MonosatJNI
+ * Method:    getBitvectorNameCount
+ * Signature: (JJI)I
+ */
+JNIEXPORT jint JNICALL Java_monosat_MonosatJNI_getBitvectorNameCount
   (JNIEnv *, jclass, jlong, jlong, jint);
 
 /*
@@ -998,6 +1078,14 @@ JNIEXPORT jboolean JNICALL Java_monosat_MonosatJNI_hasNamedNode
  */
 JNIEXPORT jstring JNICALL Java_monosat_MonosatJNI_getNodeName
   (JNIEnv *, jclass, jlong, jlong, jint);
+
+/*
+ * Class:     monosat_MonosatJNI
+ * Method:    graphSetDecisionsEnabled
+ * Signature: (JJZ)V
+ */
+JNIEXPORT void JNICALL Java_monosat_MonosatJNI_graphSetDecisionsEnabled
+  (JNIEnv *, jclass, jlong, jlong, jboolean);
 
 /*
  * Class:     monosat_MonosatJNI

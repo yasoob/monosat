@@ -66,24 +66,82 @@ final class MonosatJNI { // package level access specifier
   //this will be called automatically if the solver is deleted
   public static native void closeFile (long solverPtr);
 
-  // Set a variable name. Name must consist of printable ascii characeters,
-  // and must be unique (or it may be empty). If variable previously had a name
-  // that name will be replaced by this one. If name is empty, then
-  // variable will no longer have a name after this call.
-  public static native void setVariableName(long solverPtr, int variable, String name);
 
-  public static native String getVariableName(long solverPtr, int variable);
 
-  public static native boolean variableHasName(long solverPtr, int variable);
+    /**
+     * Adds a name to a literal. The name must consist of printable ascii characters,
+     * must not include `~`, and must be unique.
+     * If the variable previously had a name, it will have multiple names after this call.
+     * When a literal is assigned a name, its opposite polarity is also assigned that name,
+     * prefixed by a '~'.
+     */
+    public static native void addLiteralName(long solverPtr, int literal, String name);
 
-  public static native boolean hasVariableWithName(long solverPtr, String name);
+    // True if the specified variable has the given name
+    public static native boolean literalHasName(long solverPtr, int literal, String name);
 
-  //get the number of named variables in the solver
-  public static native int nNamedVariables(long solverPtr);
-  //Get the nth named variable
-  public static native int getNamedVariableN(long solverPtr, int n);
+    /*
+     * Retrieve a literal's name. If the literal has more than one name, then name index
+     * selects which name to return (in the order they were assigned).
+     * Otherwise, it should be set to 0.
+     * If the literal has no names, or if nameIndex is out of range, this returns
+     * the empty string.
+     */
+    public static native String getLiteralName(long solverPtr, int literal, int nameIndex);
 
-  public static native int getVariable(long solverPtr, String name);
+    /**
+     * Return the number of names associated with a literal.
+     */
+    public static native int literalNameCount(long solverPtr, int literal);
+
+    public static native boolean hasLiteralWithName(long solverPtr, String name);
+
+    //get the number of named literals in the solver
+    public static native int nNamedLiterals(long solverPtr);
+    //Get the nth named literal
+    public static native int getNamedLiteralN(long solverPtr, int n);
+
+    public static native int getLiteral(long solverPtr, String name);
+
+    /**
+     * Adds a name to a literal. The name must consist of printable ascii characters,
+     * must not include `~`, and must be unique.
+     * If the variable previously had a name, it will have multiple names after this call.
+     */
+    @Deprecated
+    public static native void addVariableName(long solverPtr, int literal, String name);
+
+    // True if the specified variable has the given name
+    @Deprecated
+    public static native boolean variableHasName(long solverPtr, int variable, String name);
+
+
+    /*
+     * Get a variable's name. If the variable has more than one name, then name index
+     * selects which name to return (in the order they were assigned).
+     * Otherwise, it should be set to 0.
+     * If the variable has no names, or if nameIndex is out of range, this returns
+     * the empty string.
+     */
+    @Deprecated
+    public static native String getVariableName(long solverPtr, int variable, int nameIndex);
+
+
+    //Return the number of names associated with a variable.
+    @Deprecated
+    public static native int variableNameCount(long solverPtr, int variable);
+    @Deprecated
+    public static native boolean hasVariableWithName(long solverPtr, String name);
+
+    //get the number of named variables in the solver
+    @Deprecated
+    public static native int nNamedVariables(long solverPtr);
+    //Get the nth named variable
+    @Deprecated
+    public static native int getNamedVariableN(long solverPtr, int n);
+
+    @Deprecated
+    public static native int getVariable(long solverPtr, String name);
 
   // basic solver functions
   public static native boolean solve(long solverPtr);
@@ -245,7 +303,9 @@ final class MonosatJNI { // package level access specifier
   public static native boolean bitvectorHasName(long solverPtr, long bvPtr, int bvID);
   public static native boolean hasBitvectorWithName(long solverPtr, long bvPtr, String name);
 
-  public static native String getBitvectorName(long solverPtr, long bvPtr, int bvID);
+  public static native String getBitvectorName(long solverPtr, long bvPtr, int bvID, int nameIndex);
+
+  public static native int getBitvectorNameCount(long solverPtr, long bvPtr, int bvID);
 
   public static native int getBitvectorWidth(long solverPtr, long bvPtr, int bvID);
   // Number of defined literals in the BV, which may be 0 or the bitvector width
@@ -405,6 +465,8 @@ final class MonosatJNI { // package level access specifier
   public static native boolean hasNamedNode(long solverPtr, long graphPtr, String name);
 
   public static native String getNodeName(long solverPtr, long graphPtr, int node);
+
+  public static native void graphSetDecisionsEnabled(long solverPtr, long graphPtr, boolean enabled);
 
   public static native int newEdge(
       long solverPtr, long graphPtr, int from, int to, long constweight);

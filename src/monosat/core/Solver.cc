@@ -443,22 +443,23 @@ void Solver::cancelUntil(int lev) {
                     int theoryID = getTheoryID(x,n);
                     Lit l = getTheoryLit(trail[c],n);
 
-                    if (c <= satisfied_theory_trail_pos[theoryID]) {
-                        satisfied_theory_trail_pos[theoryID] = -1;
-                        post_satisfied_theory_trail_pos[theoryID] = -1;
-                        //printf("theory %d no longer sat at lev %d\n",theoryID, decisionLevel());
-                    }
 
-                    if (satisfied_theory_trail_pos[theoryID] < 0) {
+					if(c<= satisfied_theory_trail_pos[theoryID]){
+						satisfied_theory_trail_pos[theoryID]=-1;
+						post_satisfied_theory_trail_pos[theoryID]=-1;
+						//printf("theory %d no longer sat at lev %d\n",theoryID, decisionLevel());
+					}
+
+					if(satisfied_theory_trail_pos[theoryID]< 0 ) {
                         theories[theoryID]->undecideTheory(l);
                     } else if (c > satisfied_theory_trail_pos[theoryID] &&
                                c <= post_satisfied_theory_trail_pos[theoryID]) {
                         theories[theoryID]->undecideTheory(l);
-                        post_satisfied_theory_trail_pos[theoryID] = c - 1;
-                    }
-                    assert(satisfied_theory_trail_pos[theoryID] < c);
-                    assert(post_satisfied_theory_trail_pos[theoryID] < c);
-                }
+						post_satisfied_theory_trail_pos[theoryID]= c-1;
+					}
+					assert(satisfied_theory_trail_pos[theoryID]<c);
+					assert(post_satisfied_theory_trail_pos[theoryID]<c);
+				}
 				//}
 				assigns[x] = l_Undef;
 				if (phase_saving > 1 || ((phase_saving == 1) && c > trail_lim.last()))
@@ -572,10 +573,10 @@ void Solver::cancelUntil(int lev) {
                 int theoryID = getTheoryID(p,n);
                 Lit l = getTheoryLit(p,n);
                 if (!theorySatisfied(theories[theoryID])) {
-                    needsPropagation(theoryID);
+				    needsPropagation(theoryID);
                     theories[theoryID]->enqueueTheory(l);
                 }
-            }
+			}
 		}
 		//should qhead be adjusted, here? Or do we want to repropagate these literals? (currently, re-propagating these literals).
 
@@ -658,10 +659,10 @@ void Solver::instantiateLazyDecision(Lit p,int atLevel, CRef reason){
         int theoryID = getTheoryID(p, n);
         Lit l = getTheoryLit(p, n);
         if (!theorySatisfied(theories[theoryID])) {
-            needsPropagation(theoryID);
+		    needsPropagation(theoryID);
             theories[theoryID]->enqueueTheory(l);
         }
-    }
+	}
 }
 void Solver::analyzeHeuristicDecisions(CRef confl, IntSet<int> & conflicting_heuristics, int max_involved_heuristics, int minimimum_involved_decision_priority){
 	if(max_involved_heuristics>-1 && conflicting_heuristics.size()>=max_involved_heuristics)
@@ -1068,10 +1069,10 @@ void Solver::enqueueLazy(Lit p, int lev, CRef from){
             int theoryID = getTheoryID(p, n);
             Lit l = getTheoryLit(p, n);
             if (!theorySatisfied(theories[theoryID])) {
-                needsPropagation(theoryID);
+			    needsPropagation(theoryID);
                 theories[theoryID]->enqueueTheory(l);
             }
-        }
+		}
 	}else if(value(p)==l_Undef){
 		uncheckedEnqueue(p, from);
 	}else{
@@ -1546,12 +1547,16 @@ struct reduceDB_lt {
 	}
 };
 void Solver::reduceDB() {
-	int i, j;
+	if (learnts.size()==0){
+	    return;
+	}
+
 	double extra_lim = cla_inc / learnts.size();    // Remove any clause below this activity
 
 	sort(learnts, reduceDB_lt(ca));
 	// Don't delete binary or locked clauses. From the rest, delete clauses from the first half
 	// and clauses with activity smaller than 'extra_lim':
+    int i, j;
 	for (i = j = 0; i < learnts.size(); i++) {
 		Clause& c = ca[learnts[i]];
 		if (c.size() > 2 && !locked(c) && (i < learnts.size() / 2 || c.activity() < extra_lim)) {
@@ -1659,17 +1664,17 @@ void Solver::detectPureTheoryLiterals(){
 				lit_counts[toInt(l)].occurs = false;
 
 				//stats_pure_lits++;
-                if(hasTheory(v)){
+				if (hasTheory(v)) {
                     for(int n = 0;n<getNTheories(v);n++) {
                         int theoryID = getTheoryID(v, n);
                         Lit theoryLit = getTheoryLit(l, n);
-                        stats_pure_theory_lits++;
-                        if(value(l)==l_Undef) {
+					stats_pure_theory_lits++;
+					if(value(l)==l_Undef) {
                             theories[theoryID]->setLiteralOccurs(~theoryLit, false);
-                        }
-                        //setPolarity(v,false);
+					}
+					//setPolarity(v,false);
                     }
-                } else {
+				} else {
 					//we can safely assign this now...
 					if (!lit_counts[toInt(~l)].seen) {
 						/*	if(decision[v])
@@ -1690,8 +1695,8 @@ void Solver::detectPureTheoryLiterals(){
 					for(int n = 0;n<getNTheories(v);n++) {
 						int theoryID = getTheoryID(v, n);
 						Lit theoryLit = getTheoryLit(l, n);
-						if (value(l) == l_Undef) {
-							//level 0 variables are already handled through a separate mechanism in the theory solvers...
+    					if(value(l)==l_Undef) {
+						//level 0 variables are already handled through a separate mechanism in the theory solvers...
 							theories[theoryID]->setLiteralOccurs(theoryLit, false);
 						}
 					}
@@ -2083,6 +2088,33 @@ bool Solver::addDelayedClauses(CRef & conflict_out) {
 	return true;
 }
 
+
+Lit Solver::getNextCommitment(){
+    //this can be made more efficient
+    //int nextDecisionN = decisionLevel() - assumptions.size()-1;
+    //while(nextDecisionN<committed_decisions.size()){
+    for(int nextDecisionN = 0;nextDecisionN<committed_decisions.size();nextDecisionN++){
+        Lit l = committed_decisions[nextDecisionN];
+        assert(l!=lit_Undef);
+        if(value(l)==l_False){
+        	committed_decisions.shrink(committed_decisions.size() - nextDecisionN);
+        	return lit_Undef;
+        }else if (value(l)==l_True){
+            //newDecisionLevel();//dummy decision level
+            //nextDecisionN++;
+        }else {
+            return l;
+        }
+    }
+#ifndef NDEBUG
+	for(Lit l:committed_decisions){
+    	assert(value(l)==l_True);
+    	//assert(level(var(l))<=committed_decisions.size()+assumptions.size());
+    }
+#endif
+    return lit_Undef;
+}
+
 /*_________________________________________________________________________________________________
  |
  |  search : (nof_conflicts : int) (params : const SearchParams&)  ->  [lbool]
@@ -2100,6 +2132,7 @@ lbool Solver::search(int nof_conflicts) {
 	assert(ok);
 	int backtrack_level;
 	int conflictC = 0;
+    committed_decisions.clear();
 	vec<Lit> learnt_clause;
 	Heuristic* previous_conflict_heuristic=nullptr;
 
@@ -2120,7 +2153,7 @@ lbool Solver::search(int nof_conflicts) {
 	n_theory_decision_rounds+=using_theory_decisions;
 	for (;;) {
 		static int iter = 0;
-		if (++iter == 1029) {//3150 //3144
+		if (++iter == 16237) {//3150 //3144
 			int a = 1;
 		}
 
@@ -2182,13 +2215,15 @@ lbool Solver::search(int nof_conflicts) {
 			// CONFLICT
 			conflicts++;
 			conflictC++;
-
 			if(last_decision_heuristic){
 				n_theory_conflicts++;
 				consecutive_theory_conflicts++;
 				if(opt_theory_conflict_max && consecutive_theory_conflicts>=opt_theory_conflict_max){
 					next_theory_decision=conflicts+consecutive_theory_conflicts;
 					consecutive_theory_conflicts=0;
+					if(opt_print_theory_decisions){
+					    printf("Disabling theory decisions\n");
+					}
 				}
 			}else{
 				consecutive_theory_conflicts=0;
@@ -2629,14 +2664,18 @@ lbool Solver::search(int nof_conflicts) {
 				continue;
 			}
 
+
 			//Note: decision level is now added before theories make their decisions, to allow them to decide multiple literals at once.
 			newDecisionLevel();
+
+            if(next ==lit_Undef && opt_commit_to_decisions>0){
+                next = getNextCommitment();
+            }
 
 			/**
              * Give the theory solvers a chance to make decisions
              */
 			if (opt_decide_theories && !disable_theories && using_theory_decisions && next == lit_Undef && (opt_theory_conflict_max==0 || conflicts>=next_theory_decision) ) {
-
 				int next_var_priority=INT_MIN;
 
 				//remove decided vars from order heap
@@ -2653,6 +2692,14 @@ lbool Solver::search(int nof_conflicts) {
 					while (next==lit_Undef && !theory_order_heap.empty() && theory_order_heap.peekMin()->getPriority()>=next_var_priority) {
 						Heuristic * h = theory_order_heap.peekMin();
 						++decision_iter;
+						if(h->getTheoryIndex()>=0 && !theory_decisions_enabled[h->getTheoryIndex()]){
+							theory_order_heap.removeMin();
+							if(decisionLevel()>0) {
+								theory_decision_trail.push({h, decisionLevel()});
+							}
+							continue;
+						}
+
 						//int theoryID = h->getTheoryIndex();
 						if(!heuristicSatisfied(h)) {
 							if (opt_vsids_both &&
@@ -2757,6 +2804,9 @@ lbool Solver::search(int nof_conflicts) {
 				}else{
 					next_decision_heuristic=nullptr;
 				}
+                if(next!=lit_Undef && committed_decisions.size()<opt_commit_to_decisions){
+                    committed_decisions.push(next);
+                }
 			}
 			{
 
@@ -2770,6 +2820,7 @@ lbool Solver::search(int nof_conflicts) {
 					//update the last decision heuristic only if the above condition was not triggered
 					last_decision_heuristic = next_decision_heuristic;
 				}
+
 			}
 			if (next == lit_Undef) {
 				// New variable decision:
@@ -3218,7 +3269,7 @@ void Solver::relocAll(ClauseAllocator& to) {
 
 		for (int s = 0; s < 2; s++) {
 			Lit p = mkLit(v, s);
-			// printf(" >>> RELOCING: %s%d\n", sign(p)?"-":"", var(p)+1);
+
 			vec<Watcher>& ws = watches[p];
 			for (int j = 0; j < ws.size(); j++)
 				ca.reloc(ws[j].cref, to);
@@ -3255,30 +3306,44 @@ void Solver::garbageCollect() {
 	to.moveTo(ca);
 }
 
-void Solver::setVariableName(Var v, const std::string & name){
-	if(v<0 || v>=nVars()){
+void Solver::addLiteralName(Lit l, const std::string & name){
+	if(var(l)<0 || var(l)>=nVars()){
 		throw std::invalid_argument("No such variable");
 	}
-	assert(v>=0);
-	assert(v<nVars());
-	if(name.size()>0){
-		if(hasName(v)){
-			throw std::invalid_argument("Cannot name the same variable multiple times.");
-		}
 
-		if (hasVariable(name)){
-			throw std::invalid_argument("All variable names must be unique.");
+	if(name.size()>0){
+
+		if (hasLiteral(name)){
+		    if(getLiteral(name)!=l) {
+                throw std::invalid_argument("All literal names must be unique: " + name);
+            }else{
+		        //this variable already has this name, do nothing
+		        return;
+		    }
 		}else{
 			//check if any chars of name are illegal
 			for(char c:name){
-				if(!isascii(c) || !isprint(c) || isspace(c)){
-					throw std::invalid_argument(std::string("Variable names must consist only of printable, non-whitespace ASCII. Invalid character in variable name: ") + name);
+				if(!isascii(c) || !isprint(c) || isspace(c) || (c=='~')){
+					throw std::invalid_argument(std::string("Variable names must consist only of printable, non-whitespace ASCII, and may not include '~'. Invalid character in variable name: ") + name);
 				}
 			}
 		}
-        named_variables.push(v);
-		varnames.insert({v,name});
-		assert(!namemap.count(name) || namemap[name]==var_Undef);
-		namemap[name] = v;
+
+        if(literalNameCount(l)==0){
+            named_literals.push(l);
+            litnames.insert({toInt(l),std::vector<std::string>()});
+        }
+		if(literalNameCount(~l)==0){
+			litnames.insert({toInt(~l),std::vector<std::string>()});
+		}
+
+        litnames[toInt(l)].push_back(name);
+		assert(!namemap.count(name) || namemap[name]==lit_Undef);
+		namemap[name] = l;
+
+		std::string neg_name = "~" + name;
+		litnames[toInt(~l)].push_back(neg_name);
+		assert(!namemap.count(neg_name) || namemap[neg_name]==lit_Undef);
+		namemap[neg_name] = ~l;
 	}
 }

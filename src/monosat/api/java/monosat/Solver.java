@@ -77,7 +77,7 @@ public final class Solver implements Closeable {
   /**
    * Contains only the positive versions of instantiated literals, in the order they were created.
    */
-  private final LinkedHashSet<Lit> positiveLiterals = new LinkedHashSet<>();
+  private final ArrayList<Lit> positiveLiterals = new ArrayList<>();
   /** Each unique bitvector, stored by bvID. */
   private final ArrayList<BitVector> bvmap = new ArrayList<>();
   /**
@@ -314,7 +314,7 @@ public final class Solver implements Closeable {
       // is the same as this True Lit.
 
       assert (Lit.True == toLit(true_lit));
-      assert (positiveLiterals.contains(Lit.True));
+
     }
     initBV();
     initBuffers();
@@ -1204,10 +1204,8 @@ public final class Solver implements Closeable {
     assert (allLits.get(l.l) == l);
 
     if (l.sign()) {
-      assert (!positiveLiterals.contains(notL));
       positiveLiterals.add(notL);
     } else {
-      assert (!positiveLiterals.contains(l));
       positiveLiterals.add(l);
     }
   }
@@ -1239,7 +1237,6 @@ public final class Solver implements Closeable {
       assert (!allLits.get(var * 2).sign());
       assert (allLits.get(var * 2 + 1).sign());
 
-      assert (!positiveLiterals.contains(l));
       positiveLiterals.add(l);
     }
     assert (allLits.get(literal) != null);
@@ -1253,7 +1250,7 @@ public final class Solver implements Closeable {
    * @return unmodifiable view of the positive literals in the solver.
    */
   public Collection<Lit> getLits() {
-    return Collections.unmodifiableSet(positiveLiterals);
+    return positiveLiterals;
   }
 
   /**
@@ -1560,6 +1557,57 @@ public final class Solver implements Closeable {
     return new BitVector(this, width, constant);
   }
 
+    /**
+     * Assign a name to a literal.
+     * <p>
+     * Literals in MonoSAT may have zero or more names.
+     * Positive and negative signed literals of a variable share the same names.
+     * @param l The literal to add a name to.
+     * @param name The name to assign to the literal.
+     * If the string is empty, then no name will be
+     * added to this literal. Otherwise, the name must be unique,
+     * and is restricted to printable ASCII characters.
+     *
+     * @throws IllegalArgumentException If the new name is not a valid ID.
+     */
+    public void addName(Lit l, String name) {
+        validate(l);
+        if(name.contains("~")){
+            throw new IllegalArgumentException("Literal IDs may not include \"~\":" + name + "\" is not a valid name.");
+        }
+        if(name!=null && name.length()>0) {
+            String proposedName = MonosatJNI.validID(name);
+            MonosatJNI.addLiteralName(getSolverPtr(), l.l, proposedName);
+            if (l._name == null || l._name.length() == 0) {
+                l._name = proposedName;
+            }
+            if (l.not()._name == null || l.not()._name.length() == 0) {
+                l.not()._name = "~" + proposedName;
+            }
+        }
+    }
+    /**
+     * Assign a name to a BitVector.
+     * <p>
+     * BitVectors in MonoSAT may have zero or more names.
+     * @param bv The BitVector to add a name to.
+     * @param name The name to assign to the BitVector.
+     * If the string is empty, then no name will be
+     * added to this BitVector. Otherwise, the name must be unique,
+     * and is restricted to printable ASCII characters.
+     *
+     * @throws IllegalArgumentException If the new name is not a valid ID.
+     */
+    public void addName(BitVector bv, String name) {
+        validate(bv);
+        if(name!=null && name.length()>0) {
+            String proposedName = MonosatJNI.validID(name);
+            MonosatJNI.setBitvectorName(getSolverPtr(),bvPtr, bv.getID(), proposedName);
+            if (bv._name == null || bv._name.length() == 0) {
+                bv._name = proposedName;
+            }
+        }
+    }
   /**
    * Returns an iterator over the (positive) literals in the solver. Each literal in the iterator
    * has positive sign.
@@ -1593,7 +1641,7 @@ public final class Solver implements Closeable {
     @Override
     public boolean hasNext() {
       if (named) {
-        return index < MonosatJNI.nNamedVariables(Solver.this.getSolverPtr());
+        return index < MonosatJNI.nNamedLiterals(Solver.this.getSolverPtr());
       } else {
         return index < Solver.this.nVars();
       }
@@ -1605,7 +1653,7 @@ public final class Solver implements Closeable {
         throw new IndexOutOfBoundsException();
       }
       if (named) {
-        return toLit(2 * MonosatJNI.getNamedVariableN(Solver.this.getSolverPtr(), index++));
+        return toLit(MonosatJNI.getNamedLiteralN(Solver.this.getSolverPtr(), index++));
       } else {
         return toLit((index++) * 2);
       }
@@ -1697,18 +1745,17 @@ public final class Solver implements Closeable {
     if (name == null || name.length() == 0) {
       throw new IllegalArgumentException("Name must not be empty");
     }
-    int variable = MonosatJNI.getVariable(getSolverPtr(), MonosatJNI.validID(name));
     if (name == "True") {
       return Lit.True;
     } else if (name == "False") {
       return Lit.False;
     }
-    if (variable >= 0) {
-      Lit lit = toLit(variable * 2);
-      validate(lit);
-      assert (!lit.sign());
-      assert (lit.name().equals(name));
 
+    int literal = MonosatJNI.getLiteral(getSolverPtr(), MonosatJNI.validID(name));
+
+    if (literal >= 0) {
+      Lit lit = toLit(literal);
+      validate(lit);
       return lit;
     } else {
       throw new IllegalArgumentException("No variable with name " + name);
@@ -1728,7 +1775,7 @@ public final class Solver implements Closeable {
       if (name == null || name.length() == 0) {
           return false;
       }
-      return MonosatJNI.hasVariableWithName(getSolverPtr(), MonosatJNI.validID(name));
+      return MonosatJNI.hasLiteralWithName(getSolverPtr(), MonosatJNI.validID(name));
   }
 
   /**

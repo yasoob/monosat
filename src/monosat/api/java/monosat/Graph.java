@@ -267,6 +267,10 @@ public final class Graph {
     solver.allGraphs.put(graphPtr, this);
   }
 
+  public void setDecisionsEnabled(boolean enabled){
+     MonosatJNI.graphSetDecisionsEnabled(solver.getSolverPtr(), graphPtr,enabled);
+  }
+
   /**
    * Get the solver that this BitVector belongs to.
    *
@@ -751,7 +755,7 @@ public final class Graph {
       all_in_edge_lits.get(to).add(l);
       all_node_edge_lits.get(from).add(l);
       all_node_edge_lits.get(to).add(l);
-      l.setName(name);
+      getSolver().addName(l,name);
       return l;
     }
   }
@@ -805,7 +809,7 @@ public final class Graph {
     all_in_edge_lits.get(to).add(l);
     all_node_edge_lits.get(from).add(l);
     all_node_edge_lits.get(to).add(l);
-    l.setName(name);
+    getSolver().addName(l,name);
     return l;
   }
 
@@ -872,8 +876,8 @@ public final class Graph {
       Lit l = addEdge(from, to, constantWeight);
       Lit l2 = addEdge(to, from, constantWeight);
       solver.assertEqual(l, l2);
-      l.setName(name);
-      l2.setName(name+"_back");
+      getSolver().addName(l,name);
+      getSolver().addName(l2,name+"_back");
       return l;
     }
   }
@@ -917,8 +921,8 @@ public final class Graph {
     Lit l = addEdge(from, to, weight);
     Lit l2 = addEdge(to, from, weight);
     solver.assertEqual(l, l2);
-    l.setName(name);
-    l2.setName(name+"_back");
+    getSolver().addName(l,name);
+    getSolver().addName(l2,name+"_back");
     return l;
   }
 

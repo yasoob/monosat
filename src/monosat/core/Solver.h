@@ -35,9 +35,10 @@
 #include "monosat/core/Config.h"
 #include <cinttypes>
 #include <map>
-
-
-
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <vector>
 
 namespace Monosat {
 template<typename Weight> class GraphTheorySolver;
@@ -134,7 +135,7 @@ public:
 	void addTheory(Theory*t) override {
 		if(t->getName().size()>0) {
 		    if (theorymap.count(t->getName())>0){
-                throw std::invalid_argument("All theory names must be unique.");
+                throw std::invalid_argument("All theory names must be unique: "  + t->getName());
 		    }
 			theorymap.insert({t->getName(), t});
 		}
@@ -144,6 +145,7 @@ public:
 		theory_reprop_trail_pos.push(-1);
 		theory_init_prop_trail_pos.push(-1);
 		t->setTheoryIndex(theories.size() - 1);
+        setTheoryDecisionsEnabled(t->getTheoryIndex(),true);
 		if(t->supportsDecisions()){
 			addHeuristic(t);
 		}
@@ -152,6 +154,13 @@ public:
 
 		cancelUntil(0);
 		resetInitialPropagation();
+	}
+    void setTheoryDecisionsEnabled(int theoryIndex, bool enabled){
+        theory_decisions_enabled.growTo(theoryIndex+1,true);
+        theory_decisions_enabled[theoryIndex]=enabled;
+    }
+	void setTheoryDecisionsEnabled(Theory * t, bool enabled){
+        setTheoryDecisionsEnabled(t->getTheoryIndex(),enabled);
 	}
 	void addHeuristic(Heuristic*t)override {
 		if(t->getHeuristicIndex()>=0) {
@@ -368,7 +377,7 @@ public:
 			return 0;
 		}else{
 			return theory_vars[v].theories.size();
-		}
+	}
 	}
 	inline int getTheoryID(Var v, int theoryN) {
 		return theory_vars[v].theories[theoryN].theory;
@@ -568,9 +577,7 @@ public:
 			const_true=mkLit(newVar(false,false));
 			addClause(const_true);
 			assert(isConstantTrue(const_true));
-			if(!hasName(var(const_true))) {
-				setVariableName(var(const_true), "True");
-			}
+			addLiteralName(const_true, "True");
 		}
 
 		return const_true;
@@ -588,35 +595,50 @@ public:
 		varRemap=map;
 	}
 
-	bool hasVariable(const std::string & name){
-		return getVariable(name)!=var_Undef;
+	bool hasLiteral(const std::string & name){
+		return getLiteral(name)!=lit_Undef;
 	}
-	bool hasName(Var v){
-		return getVariableName(v).size()>0;
+	int literalNameCount(Lit l){
+		if((var(l)<0) || !litnames.count(toInt(l))){
+			return 0;
+		}else{
+			return litnames[toInt(l)].size();
+		}
+	}
+	bool hasName(Lit l, std::string name){
+		return var(l)>=0 && getLiteral(name)==l;
 	}
 	//Associate variable v with a name.
 	//If name is empty, then remove any existing name associated with v
-	void setVariableName(Var v, const std::string & name);
-	//Returns the name associated with this variable, or an empty string of there is no name.
-	const std::string & getVariableName(Var v){
-		if(v<0 || !varnames.count(v)){
+	//If the variable already has this name, do nothing
+    //Assigned the negated polarity the same name prefixed with '~'
+	void addLiteralName(Lit l, const std::string & name);
+	//Returns the nth name associated with this variable, or an empty string of there is no name.
+	const std::string & getLiteralName(Lit l, int nameIndex =0){
+		if(l==lit_Undef || !litnames.count(toInt(l))){
 			return empty_name;
 		}
-		return varnames[v];
+		std::vector<std::string> & names = litnames[toInt(l)];
+		if(nameIndex<0 || names.size()<nameIndex){
+			return empty_name;
+		}else{
+			return names[nameIndex];
+		}
 	}
 
 	//Get the variable associated with this name (if any).
 	//Returns Var_Undef if there is no variable assocaited with this name.
-	Var getVariable(const std::string & name){
+	Lit getLiteral(const std::string & name){
 		if (!namemap.count(name)){
-			return var_Undef;
+			return lit_Undef;
 		}
 		return namemap[name];
 	}
+    const vec<Lit> & namedLiterals(){
+        return named_literals;
+    }
 
-	const vec<Var> & namedVariables(){
-        return named_variables;
-	}
+
 
 	// Variable mode:
 	//
@@ -665,6 +687,8 @@ public:
 	vec<lbool> model;             // If problem is satisfiable, this vector contains the model (if any).
 	LSet       conflict;          // If problem is unsatisfiable (possibly under assumptions),
 	// this vector represent the final conflict clause expressed in the assumptions.
+
+	vec<Lit> committed_decisions; //Decisions that are 'committed to' by the solver. Cleared after restarts.
 
 	vec<vec<Lit> > interpolant; //This vector represents an interpolant between this module and its super solver ('S'), if it is attached to such a solver and the instance is UNSAT.
 	// Variables in each clause in the interpolant vector are in the super solver's variable space, not the subsolver's.
@@ -736,9 +760,10 @@ public:
 	int super_offset = -1;
 	DimacsMap * varRemap=nullptr;
 
-    std::map<int,std::string> varnames;  //Optional names associated with each variable
-	std::map<std::string, int> namemap; //variable name lookup map
-    vec<Var> named_variables;//all variables that have names, in the order they were named
+    std::map<int,std::vector<std::string>> litnames;  //Optional names associated with each literal
+	std::map<std::string, Lit> namemap; //literal name lookup map
+    vec<Lit> named_literals;//all literals that have names, in the order they were named
+
     static const std::string empty_name;
 
 
@@ -894,8 +919,7 @@ protected:
 
 		}
 	};
-
-    struct TheoryData{
+	struct TheoryData {
         int theory;
         Var theory_var;
     };
@@ -959,7 +983,7 @@ protected:
 	struct HeuristicToInt {
 		int operator()(Heuristic * h) const { return h->getHeuristicIndex(); }
 	};
-
+	vec<bool> theory_decisions_enabled;
 	Heap<Heuristic*,HeuristicOrderLt,HeuristicToInt> theory_order_heap;
 	vec<std::pair<Heuristic*,int>> theory_decision_trail;
 	//Heap<LazyLevelLt> lazy_heap;       // A priority queue of variables to be propagated at earlier levels, lazily.
@@ -1079,6 +1103,7 @@ protected:
 
 	void analyzeHeuristicDecisions(CRef confl, IntSet<int> & conflicting_heuristics, int max_involved_heuristics,int minimimum_involved_decision_priority);
 	bool litRedundant(Lit p, uint32_t abstract_levels);                       // (helper method for 'analyze()')
+	Lit  getNextCommitment(); //If decision commitments are used, retrieve the next committed decision
 	lbool search(int nof_conflicts);                                     // Search for a given number of conflicts.
 	lbool solve_();                                           // Main solve method (assumptions given in 'assumptions').
 	void reduceDB();                                                      // Reduce the set of learnt clauses.
@@ -1561,8 +1586,8 @@ inline bool Solver::okay() const {
 	return ok;
 }
 
-inline ClauseIterator Solver::clausesBegin() const { return ClauseIterator(ca, &clauses[0]); }
-inline ClauseIterator Solver::clausesEnd  () const { return ClauseIterator(ca, &clauses[clauses.size()]); }
+inline ClauseIterator Solver::clausesBegin() const { return ClauseIterator(ca, clauses.begin()); }
+inline ClauseIterator Solver::clausesEnd  () const { return ClauseIterator(ca, clauses.end()); }
 inline TrailIterator  Solver::trailBegin  () const { return TrailIterator(&trail[0]); }
 inline TrailIterator  Solver::trailEnd    () const {
 	return TrailIterator(&trail[decisionLevel() == 0 ? trail.size() : trail_lim[0]]); }

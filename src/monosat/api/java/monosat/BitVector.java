@@ -61,7 +61,7 @@ public final class BitVector {
   private final int width;
   private final Solver solver;
   private final ArrayList<Lit> bits = new ArrayList<Lit>();
-  private final String _name;
+  protected String _name;
 
   /**
    * MonoSAT supports different types of bitvectors.
@@ -235,7 +235,7 @@ public final class BitVector {
 
       if (MonosatJNI.hasBitvectorWithName(solver.getSolverPtr(), solver.bvPtr, name)) {
         // this name is already used
-        throw new IllegalArgumentException("No two bitvectors may have the same (non-empty) name");
+        throw new IllegalArgumentException("No two bitvectors may have the same (non-empty) name: " + name);
       }
 
     } else {
@@ -282,7 +282,7 @@ public final class BitVector {
       int l = MonosatJNI.getBitvectorBit(solver.getSolverPtr(), solver.bvPtr, bvID, i);
       bits.add(solver.getLiteral(l));
     }
-    _name = MonosatJNI.getBitvectorName(solver.getSolverPtr(), solver.bvPtr, id);
+    _name = MonosatJNI.getBitvectorName(solver.getSolverPtr(), solver.bvPtr, id,0);
     solver.registerBitVector(this);
   }
 

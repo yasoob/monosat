@@ -220,6 +220,8 @@ extern BoolOption opt_kt_preserve_order;
 
 extern IntOption opt_maxflow_decisions_type;
 
+extern IntOption opt_commit_to_decisions;
+
 extern BoolOption opt_lazy_maxflow_decisions;
 extern BoolOption opt_maxflow_allow_cycles;
 extern BoolOption opt_old_lazy_maxflow_decisions;
@@ -228,6 +230,8 @@ extern IntOption opt_maxflow_decision_paths;
 extern BoolOption opt_reach_detector_combined_maxflow;
 extern IntOption opt_adaptive_conflict_mincut;
 extern BoolOption opt_shortest_path_prune_dist;
+extern BoolOption opt_decide_reach_reverse;
+extern DoubleOption opt_decide_theories_reverse_freq;
 extern BoolOption opt_graph_bv_prop;
 
 extern IntOption opt_graph_prop_skip;
@@ -254,7 +258,7 @@ extern IntOption opt_graph_use_cache_for_decisions;
 extern OptionSet opt_route;
 extern OptionSet opt_route2;
 
-
+extern BoolOption opt_print_theory_decisions;
 
 enum class ReachAlg {
 	ALG_SAT, ALG_DFS, ALG_DIJKSTRA, ALG_DISTANCE, ALG_BFS, ALG_RAMAL_REPS, ALG_RAMAL_REPS_BATCHED,ALG_RAMAL_REPS_BATCHED2

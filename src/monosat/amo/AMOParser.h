@@ -60,7 +60,7 @@ public:
 				if (parsed_var == 0)
 					break;
 				bool sign = false;
-				if (parsed_var<0){
+				if(parsed_var<0){
 					sign=true;
 					parsed_var = -parsed_var;
 				}

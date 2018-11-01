@@ -25,13 +25,15 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
 public class LitTest {
   static final String tricky_name =
-      "~`Name-with/\"\'//<>printable_\\characters?!@#$%^&*()-+{}[]|1234567890";
+      "`Name-with/\"\'//<>printable_\\characters?!@#$%^&*()-+{}[]|1234567890";
 
   @Test
   public void testGlobals() {
@@ -179,8 +181,8 @@ public class LitTest {
 
       assertEquals(a.name(), a.not().name());
       assertEquals(b.name(), b.not().name());
-      assertEquals(c.name(),c.not().name());
-      assertEquals(e.name(), e.not().name());
+      assertEquals("~" + c.name(),c.not().name());
+      assertEquals("~" +e.name(), e.not().name());
 
     try {
       s.getLiteral("");
@@ -203,39 +205,28 @@ public class LitTest {
 
         monosat.Lit c = new monosat.Lit(s, "MyLiteral");
 
-        try {
-            c.setName("MyLiteral2");
-            fail("Cannot rename previously named literals");
+
+        s.addName(c,"MyLiteral1");
+
+        assertEquals(a.name(),"");
+        try{
+            s.addName(a,"MyLiteral1");
+            fail("No two variables can have the same name");
         } catch (IllegalArgumentException except) {
             // ok
         }
 
-        try {
-            c.setName("");
-            fail("Cannot remove name from previously named literals");
-        } catch (IllegalArgumentException except) {
-            // ok
-        }
-        assertEquals(a.name(),"");
-        a.setName("MyLiteral2");
+
+        s.addName(a,"MyLiteral2");
+        assertEquals(a.name(),"MyLiteral2");
+        s.addName(a,"");
+        assertEquals(a.name(),"MyLiteral2");
+        s.addName(a,"MyLiteral4");
+        //After adding a second name, the first name of the literal does not change
         assertEquals(a.name(),"MyLiteral2");
 
         try {
-            a.setName("MyLiteral3");
-            fail("Cannot rename previously named literals");
-        } catch (IllegalArgumentException except) {
-            // ok
-        }
-
-        try {
-            a.setName("");
-            fail("Cannot remove name from previously named literals");
-        } catch (IllegalArgumentException except) {
-            // ok
-        }
-
-        try {
-            b.setName("MyLiteral");
+            s.addName(b,"MyLiteral");
             fail("No two variables can have the same name");
         } catch (IllegalArgumentException except) {
             // ok
@@ -245,23 +236,23 @@ public class LitTest {
 
 
         try {
-            b.setName("MyLiteral2");
+            s.addName(b,"MyLiteral2");
             fail("No two variables can have the same name");
         } catch (IllegalArgumentException except) {
             // ok
         }
 
-        b.not().setName("MyLiteral3");
+        s.addName(b.not(),"MyLiteral3");
 
 
         assertEquals(a.name(), "MyLiteral2");
-        assertEquals(b.name(), "MyLiteral3");
+        assertEquals(b.name(), "~MyLiteral3");
         assertEquals(c.name(), "MyLiteral");
 
 
-        assertEquals(a.name(), a.not().name());
-        assertEquals(b.name(), b.not().name());
-        assertEquals(c.name(),c.not().name());
+        assertEquals("~"+a.name(), a.not().name());
+        assertEquals(b.name(),"~"+ b.not().name());
+        assertEquals("~"+c.name(),c.not().name());
 
 
         try {
@@ -275,8 +266,50 @@ public class LitTest {
         assertEquals(s.getLiteral("False"), Lit.False); // "False" is always named in the solver
         assertEquals(s.getLiteral("MyLiteral"), c);
         assertEquals(s.getLiteral("MyLiteral2"), a);
-        assertEquals(s.getLiteral("MyLiteral3"), b);
+        assertEquals(s.getLiteral("MyLiteral3"), b.not());
+
+        assertTrue(a.hasName("MyLiteral2"));
+        assertFalse(a.hasName("~MyLiteral2"));
+        assertFalse(a.not().hasName("MyLiteral2"));
+        assertTrue(a.not().hasName("~MyLiteral2"));
+        assertTrue(c.hasName("MyLiteral"));
+        assertFalse(c.hasName("~MyLiteral"));
+        assertTrue(c.not().hasName("~MyLiteral"));
+        assertTrue(b.hasName("~MyLiteral3"));
+        assertTrue(b.not().hasName("MyLiteral3"));
+        assertFalse(a.hasName("MyLiteral3"));
+        assertFalse(a.hasName("MyLiteral"));
+        assertFalse(c.hasName("MyLiteral2"));
+        assertFalse(b.hasName("MyLiteral"));
+        assertFalse(b.hasName("MyLiteral2"));
+
+        assertTrue(a.hasName("MyLiteral4"));
+        assertTrue(a.not().hasName("~MyLiteral4"));
+
+        ArrayList<String> anames = new ArrayList<>();
+        for(String str:a.names()){
+            anames.add(str);
+            assertTrue(a.hasName(str));
+            assertFalse(b.hasName(str));
+            assertFalse(c.hasName(str));
+        }
+        assertTrue(anames.size()==2);
+        assertTrue(anames.contains("MyLiteral2"));
+        assertTrue(anames.contains("MyLiteral4"));
+
+        for(String str:b.names()){
+            assertTrue(b.hasName(str));
+            assertFalse(a.hasName(str));
+            assertFalse(c.hasName(str));
+        }
+        for(String str:c.names()){
+            assertTrue(c.hasName(str));
+            assertFalse(a.hasName(str));
+            assertFalse(b.hasName(str));
+        }
+
     }
+
   @Test
   public void testLoadingLits() throws IOException {
     File file = File.createTempFile("test", ".gnf");
@@ -389,6 +422,58 @@ public class LitTest {
     assertEquals(e2.toInt(), e.toInt());
   }
 
+    @Test
+    public void testLoadingNegatedLits() throws IOException {
+        File file = File.createTempFile("test", ".gnf");
+        String filename = file.getAbsolutePath().toString();
+        file.delete();
+
+        monosat.Solver s = new monosat.Solver("", filename);
+        monosat.Lit a = new monosat.Lit(s);
+        monosat.Lit b = new monosat.Lit(s, "");
+        monosat.Lit b2 = new monosat.Lit(s, ""); // it is ok for multiple literals to have empty names
+        monosat.Lit c = new monosat.Lit(s, "MyLiteral");
+
+        monosat.Lit e = new monosat.Lit(s, tricky_name);
+
+        s.addClause(c.not(), e.not());
+
+        try {
+            monosat.Lit f = new monosat.Lit(s, "Name With \n NewLine");
+            fail("Expected a bad name exception");
+        } catch (IllegalArgumentException except) {
+            // ok
+        }
+        try {
+            monosat.Lit g = new monosat.Lit(s, "Name With \t tab");
+            fail("Expected a bad name exception");
+        } catch (IllegalArgumentException except) {
+            // ok
+        }
+
+        assertTrue(s.solve());
+
+        monosat.Solver s2 = new monosat.Solver();
+        assertTrue(s2.solve());
+        Lit n2 = new Lit(s2, "MyLiteral2");
+
+        s2.loadConstraints(filename);
+        assertTrue(s2.solve());
+        Lit c2 = s2.getLiteral("MyLiteral");
+        Lit c2neg = s2.getLiteral("~MyLiteral");
+        Lit e2 = s2.getLiteral(tricky_name);
+        Lit e2neg = s2.getLiteral("~"+tricky_name);
+        Lit m2neg = new Lit(s2, "MyLiteral3");
+
+        assertEquals(s2.getLiteral("True"), Lit.True); // "True" is always named in the solver
+        assertEquals(s2.getLiteral("False"), Lit.False); // "False" is always named in the solver
+        assertEquals(s2.getLiteral("MyLiteral"), c2);
+        assertEquals(s2.getLiteral(tricky_name), e2);
+
+        assertEquals(c2.not(),c2neg);
+        assertEquals(e2.not(),e2neg);
+
+    }
 
     @Test
     public void testLitIterator() {
@@ -602,16 +687,14 @@ public class LitTest {
         assertTrue(s2.solve());
         assertEquals(1,s2.nVars());
         Lit a2 = new Lit(s2, "MyLiteral2");
-        try{
-            //If you load constraints, and those constraints rename an existing, already
-            //named variable, then that is an exception (and leaves the solver in a bad state)
-            s2.loadConstraints(filename);
-            fail("Expected IllegalStateException, because the same literal should not be given two separate names");
-        }catch (IllegalStateException e){
 
-        }
+        //If you load constraints, and those constraints rename an existing, already
+        //named variable, then that is no longer an exception, as multiple names
+        //per literal are now supported.
+        s2.loadConstraints(filename);
 
-
+        assertTrue(a2.hasName("MyLiteral2"));
+        assertTrue(a2.hasName("MyLiteral1"));
 
     }
 }

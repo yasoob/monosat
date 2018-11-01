@@ -843,6 +843,11 @@ void readGNF(Monosat::SimpSolver * S, const char  * filename){
 	}
 }
 
+void graphSetDecisionsEnabled(Monosat::SimpSolver * S, Monosat::GraphTheorySolver<int64_t> * G, bool enabled){
+	S->setTheoryDecisionsEnabled(G,enabled);
+	write_out(S,"setDecisionsEnabled %d %d\n",G->getTheoryIndex(),enabled?1:0);
+}
+
 Monosat::GraphTheorySolver<int64_t> *  newGraph(Monosat::SimpSolver * S){
 	return newGraph_Named(S,"",-2);
 }
@@ -1044,8 +1049,8 @@ int newVar(Monosat::SimpSolver * S){
 int newNamedVar(Monosat::SimpSolver * S,const char  * varname){
     if(varname != nullptr && strlen(varname)>0) {
         std::string name(varname);
-        if (S->hasVariable(name)){
-            throw std::invalid_argument("All variable names must be unique.");
+        if (S->hasLiteral(name)){
+            throw std::invalid_argument(std::string("All variable names must be unique: ") + std::string(varname));
         }else{
             //check if any chars of name are illegal
             for(char c:name){
@@ -1055,45 +1060,95 @@ int newNamedVar(Monosat::SimpSolver * S,const char  * varname){
             }
         }
         Var v = S->newVar();
-        setVariableName(S,externalVar(S,v),varname);
+        addVariableName(S,externalVar(S,v),varname);
         return externalVar(S,v);
     }else{
         return newVar(S);
     }
-
 }
 
 
-void setVariableName(Monosat::SimpSolver * S, int variable, const char  * varname){
-	if(varname==nullptr){
-		S->setVariableName(internalVar(S,variable), "");
+void addLiteralName(Monosat::SimpSolver * S, int literal, const char  * litname){
+	if(litname==nullptr || strlen(litname)<=0){
+		//do nothing
 	}else{
-		std::string name(varname);
-		S->setVariableName(internalVar(S,variable), varname);
-		write_out(S, "symbol %d %s\n", variable + 1, varname);
+		std::string name(litname);
+		S->addLiteralName(internalLit(S,literal), litname);
+		write_out(S, "symbol %d %s\n", dimacs(literal), litname);
 	}
 }
 
-bool variableHasName(Monosat::SimpSolver * S, int variable){
-	return S->hasName(internalVar(S,variable));
+int literalNameCount(Monosat::SimpSolver * S, int literal){
+	return S->literalNameCount(internalLit(S,literal));
 }
-bool hasVariableWithName(Monosat::SimpSolver * S, const char * name){
-	return S->hasVariable(name);
+
+bool literalHasName(Monosat::SimpSolver * S, int literal, const char * litname){
+	if(litname==nullptr || strlen(litname)<=0){
+		return false;
+	}else {
+		std::string name(litname);
+		return S->hasName(internalLit(S, literal),litname);
+	}
 }
-Var getVariable(Monosat::SimpSolver * S, const char * varname){
-	return externalVar(S,S->getVariable(varname));
+
+bool hasLiteralWithName(Monosat::SimpSolver * S, const char * name){
+	return S->hasLiteral(name);
+}
+int getLiteral(Monosat::SimpSolver * S, const char * litname){
+	return externalLit(S,S->getLiteral(litname));
 }
 //Return the name associated with this string, or the empty string if there is no name associated with this string.
-const char * getVariableName(Monosat::SimpSolver * S, int variable){
-	return S->getVariableName(internalVar(S,variable)).c_str();
+const char * getLiteralName(Monosat::SimpSolver * S, int literal,int nameIndex){
+	const std::string & name = S->getLiteralName(internalLit(S,literal),nameIndex);
+	const char * str = name.c_str();
+	return str;
+}
+
+int getNamedLiteralN(Monosat::SimpSolver * S,int n){
+	return externalLit(S,S->namedLiterals()[n]);
+}
+
+int nNamedLiterals(Monosat::SimpSolver * S){
+	return S->namedLiterals().size();
+}
+
+
+void addVariableName(Monosat::SimpSolver * S, int variable, const char  * varname){
+	addLiteralName(S, toInt(mkLit(variable,false)),varname);
+}
+
+int variableNameCount(Monosat::SimpSolver * S, int variable){
+	return S->literalNameCount(mkLit(internalVar(S,variable)));
+}
+
+bool variableHasName(Monosat::SimpSolver * S, int variable, const char * varname){
+	if(varname==nullptr || strlen(varname)<=0){
+		return false;
+	}else {
+		std::string name(varname);
+		return S->hasName(mkLit(internalVar(S, variable)),varname);
+	}
+}
+
+bool hasVariableWithName(Monosat::SimpSolver * S, const char * name){
+	return S->hasLiteral(name);
+}
+Var getVariable(Monosat::SimpSolver * S, const char * varname){
+	return externalVar(S,var(S->getLiteral(varname)));
+}
+//Return the name associated with this string, or the empty string if there is no name associated with this string.
+const char * getVariableName(Monosat::SimpSolver * S, int variable,int nameIndex){
+	const std::string & name = S->getLiteralName(mkLit(internalVar(S,variable)),nameIndex);
+	const char * str = name.c_str();
+	return str;
 }
 
 Var getNamedVariableN(Monosat::SimpSolver * S,int n){
-    return externalVar(S,S->namedVariables()[n]);
+    return externalVar(S,var(S->namedLiterals()[n]));
 }
 
 int nNamedVariables(Monosat::SimpSolver * S){
-	return S->namedVariables().size();
+	return S->namedLiterals().size();
 }
 
 
@@ -1261,7 +1316,7 @@ int newBitvector(Monosat::SimpSolver * S, Monosat::BVTheorySolver<int64_t> * bv,
 
 void setBitvectorName(Monosat::SimpSolver * S, Monosat::BVTheorySolver<int64_t> * bv, int bvID, const char * name){
 	if(name != nullptr && strlen(name)>0) {
-		bv->setSymbol(internalBV(bv,bvID), name);
+		bv->addSymbol(internalBV(bv,bvID), name);
 		write_out(S, "bv symbol %d %s\n", bvID, name);
 	}
 }
@@ -1274,8 +1329,12 @@ bool hasBitvectorWithName(Monosat::SimpSolver * S, Monosat::BVTheorySolver<int64
 	return bv->hasBitVector(name);
 }
 
-const char * getBitvectorName(Monosat::SimpSolver * S, Monosat::BVTheorySolver<int64_t> * bv, int bvID){
-	return bv->getSymbol(internalBV(bv,bvID)).c_str();
+const char * getBitvectorName(Monosat::SimpSolver * S, Monosat::BVTheorySolver<int64_t> * bv, int bvID, int nameIndex){
+	return bv->getSymbol(internalBV(bv,bvID),nameIndex).c_str();
+}
+
+int getBitvectorNameCount(Monosat::SimpSolver * S, Monosat::BVTheorySolver<int64_t> * bv, int bvID){
+	return bv->getNameCount(bvID);
 }
 
 /*

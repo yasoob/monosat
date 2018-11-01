@@ -273,7 +273,9 @@ BoolOption Monosat::opt_decide_graph_bv(_cat_graph,"decide-graph-bv","",false);
 BoolOption Monosat::opt_cmp_lits_decidable(_cat_graph,"decide-cmp-lits","Controls whether or not comparison lits introduced by the bv solver (but not in the original formula) can be chosen as decisions by the SAT solver",false);
 BoolOption Monosat::opt_decide_bv_intrinsic(_cat_graph,"decide-bv-intrinsic","",false);
 BoolOption Monosat::opt_decide_bv_bitwise(_cat_graph,"decide-bv-bitwise","",false);
+BoolOption Monosat::opt_decide_reach_reverse(_cat_graph,"decide-reach-reverse","Decide reachability theories in reverse path order, if theory decisions are enabled",false);
 BoolOption Monosat::opt_decide_theories_reverse(_cat_graph,"decide-theories-reverse","Decide theories in reverse order, if theory decisions are enabled",false);
+DoubleOption Monosat::opt_decide_theories_reverse_freq(_cat_graph,"decide-theories-reverse-freq","Decide theories in reverse order with the given frequency, if decide-theories-reverse is enabled",1, DoubleRange(0, true, 1, true));
 BoolOption Monosat::opt_use_random_path_for_decisions(_cat_graph, "decide-graph-rnd", "", false);
 BoolOption Monosat::opt_use_optimal_path_for_decisions(_cat_graph, "decide-graph-opt",
                                                        "When selecting a path during decisions, find the shortest path, excluding the weight of already assigned edges.",
@@ -376,6 +378,7 @@ BoolOption Monosat::opt_propagate_theories_during_fast_simplification(_cat, "the
                                                                       "Apply propagation to theory solvers during (fast) simplification. Can be very expensive (depending on the theory).",
                                                                       true);
 
+IntOption Monosat::opt_commit_to_decisions(_cat_theory, "commit-decisions", "Commit to the first N decisions made by the solver", 0,IntRange(0,INT32_MAX));
 
 BoolOption Monosat::opt_theory_propagate_assumptions(_cat, "theory-prop-during-assumps",
                                                      "Apply theory propagation while assigning assumptions (can be slow, if there are many assumptions)", false);
@@ -424,6 +427,10 @@ BoolOption Monosat::opt_fsm_chokepoint_prop(_cat_fsm, "fsm-chokepoint",
 
 BoolOption Monosat::opt_learn_acyclic_flows(_cat_graph, "learn-acyclic-flows",
                                             "", false);
+
+BoolOption Monosat::opt_print_theory_decisions(_cat_theory, "print-decisions",
+											"Print theory decisions to stdout (for debugging purposes)", false);
+
 
 IntOption Monosat::opt_min_edgeset(_cat_graph,"min-edge-set","set to 0 to accept all edge sets, or -1 to disable all edge sets",10,IntRange(-1,INT32_MAX));
 BoolOption Monosat::opt_only_prop_edgeset(_cat_graph,"only-prop-edgesets","",false);
