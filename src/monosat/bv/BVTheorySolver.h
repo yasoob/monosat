@@ -5087,6 +5087,9 @@ public:
 	vec<vec<int> > cause_set;//for each bv, this is the set of all bitvectors that have a greater id and might need to have their approx updated when this bv's approx changes.
 	vec<vec<int> > compares; //for each bitvector, comparisons are all to unique values, and in ascending order of compareTo.
 	vec<vec<int>> bvcompares;
+
+	vec<IntMap<Weight,Lit>> eqs; //for each bitvector, eqs contains all unique values that each BV is either equality or !equality compared to, in ascending order
+	vec<vec<Weight>> eq_consts;
 	vec<int> eq_bitvectors;//if a bv has been proven to be equivalent to another, lower index bv, put the lowest such index here.
 	vec<bool> bv_needs_propagation;
 	vec<bool> comparison_needs_repropagation;
@@ -6708,6 +6711,8 @@ public:
 		}
 	}
 
+	bool getBitFromConst(Weight & w, int index);
+
 	bool checkApproxUpToDate(int bvID, Weight * under_store=nullptr,Weight*over_store=nullptr){
 #ifdef DEBUG_BV
 		if(bvID==2966){
@@ -8004,6 +8009,8 @@ public:
 		alteredBV.growTo(bvID+1);
 		bvcompares.growTo(bvID+1);
 		compares.growTo(bvID+1);
+		eqs.growTo(bvID+1);
+		eq_consts.growTo(bvID+1);
 		bvconst.growTo(bvID+1);
 		operation_ids.growTo(bvID+1);
 		skip_updates.growTo(bvID+1,false);
@@ -8254,6 +8261,8 @@ public:
 		alteredBV.growTo(bvID+1);
 		bvcompares.growTo(bvID+1);
 		compares.growTo(bvID+1);
+		eqs.growTo(bvID+1);
+		eq_consts.growTo(bvID+1);
 		operation_ids.growTo(bvID+1);
 		under_causes.growTo(bvID+1);
 		over_causes.growTo(bvID+1);
@@ -8318,6 +8327,8 @@ public:
 		alteredBV.growTo(bvID+1);
 		bvcompares.growTo(bvID+1);
 		compares.growTo(bvID+1);
+		eqs.growTo(bvID+1);
+		eq_consts.growTo(bvID+1);
 		bvconst.growTo(bvID+1);
 		operation_ids.growTo(bvID+1);
 		skip_updates.growTo(bvID+1);
@@ -8382,6 +8393,8 @@ public:
 		skip_updates.growTo(bvID+1);
 		bvcompares.growTo(bvID+1);
 		compares.growTo(bvID+1);
+		eqs.growTo(bvID+1);
+		eq_consts.growTo(bvID+1);
 		operation_ids.growTo(bvID+1);
 		under_causes.growTo(bvID+1);
 		over_causes.growTo(bvID+1);
@@ -9048,7 +9061,30 @@ public:
             return ~c;
 	    }
 	}
+	bool hasConstantEquality(int bvID, const Weight & to){
+		return eqs[bvID].has(to) &&eqs[bvID][to]!=lit_Undef;
+	}
+	Lit getConstantEquality(int bvID, const Weight & to){
+		return toSolver(eqs[bvID][to]);
+	}
+	const vec<Weight> & getConstantEqualities(int bvID){
+		return eq_consts[bvID];
+	}
+
     Lit newComparisonEQ(int bvID,const Weight & to, bool isEquality, Var outerVar = var_Undef) {
+		assert(bvID<eqs.size());
+		IntMap<Weight,Lit> & equalities = eqs[bvID];
+		if(equalities.has(to)){
+			Lit l = equalities[to];
+			if(!isEquality){
+				l=~l;
+			}
+			if(outerVar!=var_Undef) {
+				makeEqualInSolver(mkLit(outerVar),toSolver(l));
+			}
+			return l;
+		}
+
 	    //there is room to improve this by
         //operating at the bit level if bvID has bits,
         //and by making these comparisons one sided if they are min or max val.
@@ -9065,6 +9101,8 @@ public:
             addClause(a, ~c);
             addClause(b, ~c);
             addClause(c, ~a, ~b);
+			equalities[to] = c;
+			eq_consts[bvID].push(to);
             return c;
         }else{
             Lit a = newComparison(Comparison ::geq,bvID,to);
@@ -9079,6 +9117,8 @@ public:
             addClause(a, ~c);
             addClause(b, ~c);
             addClause(c, ~a, ~b);
+			equalities[to] = c;
+			eq_consts[bvID].push(to);
             return ~c;
         }
     }
@@ -9873,6 +9913,17 @@ template<typename Weight>
 void BVTheorySolver<Weight>::setTheoryIndex(int id) {
 	theory_index = id;
 }
+
+template<typename Weight>
+bool BVTheorySolver<Weight>::getBitFromConst(Weight & val, int index) {
+	return val & (1L<<index);
+}
+
+/*
+template<>
+inline bool BVTheorySolver<mpq_class>::getBitFromConst(mpq_class & val, int index){
+	return val & (1L<<index);
+}*/
 
 template<typename Weight>
 using BitVector = typename BVTheorySolver<Weight>::BitVector;

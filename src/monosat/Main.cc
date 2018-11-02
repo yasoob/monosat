@@ -40,6 +40,7 @@
 #include "monosat/core/AssumptionParser.h"
 #include "monosat/core/Solver.h"
 #include "monosat/core/Config.h"
+#include "monosat/bv/BVSetTheory.h"
 #include <unistd.h>
 #include <sys/time.h>
 #include <algorithm>

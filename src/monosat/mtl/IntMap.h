@@ -130,6 +130,17 @@ public:
         return xs;
     }
 
+    bool equals(IntSet & compare){
+        if(compare.size()!=size()){
+            return false;
+        }
+        for(K k:xs){
+            if(!compare.contains(k)){
+                return false;
+            }
+        }
+        return true;
+    }
 };
 
 #if 0
