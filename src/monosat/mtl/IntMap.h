@@ -103,7 +103,7 @@ public:
 
 
     void     insert      (K k) { in_set.reserve(k, 0); if (!in_set[k]) { in_set[k] = 1; xs.push(k); } }
-    void	 insertAll(vec<K> & from){
+    void	 insertAll(const vec<K> & from){
         for(K & l:from){
             insert(l);
         }

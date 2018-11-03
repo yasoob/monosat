@@ -881,6 +881,17 @@ JNIEXPORT jint JNICALL Java_monosat_MonosatJNI_getBitvector
     return -1;
 }
 
+JNIEXPORT jint JNICALL Java_monosat_MonosatJNI_newBVSet
+        (JNIEnv *env, jclass monosat_class, jlong solverPtr, jlong bitvectorPtr, jint bvID, jobject buffer, jint nVals) try {
+    SolverPtr solver = reinterpret_cast<SolverPtr>(solverPtr);
+    BVTheoryPtr bv = reinterpret_cast<BVTheoryPtr>(bitvectorPtr);
+    return (jint) newBVSetContainment(solver, bv, bvID,  (int64_t *) env->GetDirectBufferAddress(buffer), nVals);
+}catch(...) {
+    javaThrow(env);
+    return 0;
+}
+
+
 JNIEXPORT jint JNICALL Java_monosat_MonosatJNI_newBVComparison_1const_1eq
         (JNIEnv *env, jclass monosat_class, jlong solverPtr, jlong bitvectorPtr, jint bvID, jlong constval) try {
     SolverPtr solver = reinterpret_cast<SolverPtr>(solverPtr);

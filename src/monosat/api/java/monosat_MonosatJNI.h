@@ -785,6 +785,14 @@ JNIEXPORT jint JNICALL Java_monosat_MonosatJNI_newBVComparison_1bv_1neq
 
 /*
  * Class:     monosat_MonosatJNI
+ * Method:    newBVSet
+ * Signature: (JJILjava/nio/LongBuffer;I)I
+ */
+JNIEXPORT jint JNICALL Java_monosat_MonosatJNI_newBVSet
+  (JNIEnv *, jclass, jlong, jlong, jint, jobject, jint);
+
+/*
+ * Class:     monosat_MonosatJNI
  * Method:    bv_bitblast
  * Signature: (JJI)V
  */

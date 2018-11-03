@@ -22,6 +22,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 package monosat;
 
 import java.nio.IntBuffer;
+import java.nio.LongBuffer;
 import java.util.Vector;
 
 /**
@@ -355,6 +356,9 @@ final class MonosatJNI { // package level access specifier
 
   public static native int newBVComparison_bv_neq(
       long solverPtr, long bvPtr, int bvID, int compareID);
+
+
+  public static native int newBVSet(long solverPtr, long bvPtr, int bvID, LongBuffer vals, int n_vals);
 
   // Convert the specified bitvector, as well as any other bitvectors in its cone of influence, into
   // pure CNF

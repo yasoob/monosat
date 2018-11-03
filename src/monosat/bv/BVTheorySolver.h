@@ -5218,6 +5218,7 @@ public:
 	int64_t propagations = -1;
 	int64_t stats_propagations_skipped = 0;
 	int64_t statis_bv_updates = 0;
+
 	const char * getTheoryType()override{
 		return "BV";
 	}
@@ -6711,7 +6712,7 @@ public:
 		}
 	}
 
-	bool getBitFromConst(Weight & w, int index);
+	bool getBitFromConst(const Weight & w, int index)const;
 
 	bool checkApproxUpToDate(int bvID, Weight * under_store=nullptr,Weight*over_store=nullptr){
 #ifdef DEBUG_BV
@@ -9064,6 +9065,12 @@ public:
 	bool hasConstantEquality(int bvID, const Weight & to){
 		return eqs[bvID].has(to) &&eqs[bvID][to]!=lit_Undef;
 	}
+	/**
+	 * Returns the solverliteral associated with this equality
+	 * @param bvID
+	 * @param to
+	 * @return
+	 */
 	Lit getConstantEquality(int bvID, const Weight & to){
 		return toSolver(eqs[bvID][to]);
 	}
@@ -9074,7 +9081,7 @@ public:
     Lit newComparisonEQ(int bvID,const Weight & to, bool isEquality, Var outerVar = var_Undef) {
 		assert(bvID<eqs.size());
 		IntMap<Weight,Lit> & equalities = eqs[bvID];
-		if(equalities.has(to)){
+		if(equalities.has(to) && equalities[to]!=lit_Undef){
 			Lit l = equalities[to];
 			if(!isEquality){
 				l=~l;
@@ -9101,7 +9108,7 @@ public:
             addClause(a, ~c);
             addClause(b, ~c);
             addClause(c, ~a, ~b);
-			equalities[to] = c;
+			equalities.insert(to, c,lit_Undef);
 			eq_consts[bvID].push(to);
             return c;
         }else{
@@ -9117,7 +9124,7 @@ public:
             addClause(a, ~c);
             addClause(b, ~c);
             addClause(c, ~a, ~b);
-			equalities[to] = c;
+            equalities.insert(to, c,lit_Undef);
 			eq_consts[bvID].push(to);
             return ~c;
         }
@@ -9915,7 +9922,7 @@ void BVTheorySolver<Weight>::setTheoryIndex(int id) {
 }
 
 template<typename Weight>
-bool BVTheorySolver<Weight>::getBitFromConst(Weight & val, int index) {
+bool BVTheorySolver<Weight>::getBitFromConst(const Weight & val, int index) const {
 	return val & (1L<<index);
 }
 

@@ -30,7 +30,7 @@
 #include "monosat/utils/ParseUtils.h"
 #include "monosat/core/SolverTypes.h"
 #include "monosat/bv/BVTheorySolver.h"
-
+#include "monosat/bv/BVSetTheory.h"
 #include "monosat/core/Config.h"
 
 #include "monosat/core/Dimacs.h"
@@ -342,6 +342,8 @@ private:
 		subtractionbvs.last().aBV =  (int) arg1;
 		subtractionbvs.last().bBV = (int) arg2;
 	}
+
+
 	void readSymbol(B& in, Solver& S){
 		//this is a variable symbol map
 		skipWhitespace(in);
@@ -439,6 +441,10 @@ private:
 		comparebv_eqs.last().compareID = (int) arg2;
 		comparebv_eqs.last().isEquality = isEquality;
 		comparebv_eqs.last().var = v;
+
+	}
+
+	void readSet(B& in, Solver& S){
 
 	}
 
@@ -559,7 +565,10 @@ public:
 			skipWhitespace(in);
 			if (match(in, "symbol")) { //previous, used  "c bv" for this
 				//this is a bitvector symbol definition
-				readSymbol(in,S);
+				readSymbol(in, S);
+				return true;
+			} else if (match(in, "set")) {
+				readSet(in,S);
 				return true;
 			}else if (match(in,"const")){
 				skipWhitespace(in);

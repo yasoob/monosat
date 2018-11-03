@@ -38,6 +38,8 @@
 #include "monosat/core/Optimize.h"
 #include "monosat/pb/PbSolver.h"
 #include "monosat/routing/FlowRouter.h"
+#include "monosat/bv/BVTheorySolver.h"
+#include "monosat/bv/BVSetTheory.h"
 #include "monosat/Version.h"
 #include "MonosatInternal.h"
 #include <csignal>
@@ -1365,6 +1367,32 @@ int bv_bit(Monosat::SimpSolver * S, Monosat::BVTheorySolver<int64_t> * bv,int bv
 
 int getBitvector(SolverPtr S, BVTheoryPtr bv, const char * name){
     return externalBV(bv, bv->getBitvector(name));
+}
+
+
+//Returns a literal that is true if BV's value is equal to one of the values in 'values',
+//and false otherwise
+int newBVSetContainment(Monosat::SimpSolver * S, Monosat::BVTheorySolver<int64_t> * bv, int bvID, int64_t* values, int nValues){
+
+
+    S->_external_data =(void*)new MonosatData(S);
+    if(!((MonosatData*)S->_external_data)->bv_set_theory){
+        ((MonosatData*)S->_external_data)->bv_set_theory = new BVSetTheory<int64_t>(S,bv);
+    }
+    BVSetTheory<int64_t> * setTheory = ((MonosatData*)S->_external_data)->bv_set_theory;
+
+	vec<int64_t> vals;
+	for(int n = 0;n<nValues;n++){
+		vals.push(values[n]);
+	}
+	Lit l =setTheory->toSolver(setTheory->newSet(internalBV(bv,bvID),vals));
+	write_out(S,"bv set %d %d ",dimacs(S,l),bvID);
+	for(int n = 0;n<nValues;n++){
+		int64_t w = values[n];
+		write_out(S,"%" PRId64,w);
+	}
+	write_out(S,"\n");
+	return externalLit(S,l);
 }
 
 int newBVComparison_const_lt(Monosat::SimpSolver * S, Monosat::BVTheorySolver<int64_t> * bv, int bvID, int64_t weight){

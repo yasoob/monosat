@@ -534,14 +534,23 @@ void Solver::cancelUntil(int lev) {
 				if(trail_lim.size()>0 && init_pos<trail_lim[decisionLevel()]){
 					init_pos=trail_lim[decisionLevel()];
 				}
-				Lit p = trail[init_pos];
-				assert(p!=lit_Undef);
-				int back_lev = level(var(p))-1;
-				if(back_lev<0)
-					back_lev=0;
-				if(lowest_re_enqueue<0 || 	trail_lim[back_lev]  < lowest_re_enqueue){
-					lowest_re_enqueue = trail_lim[back_lev];
+				if(init_pos>=trail.size()){
+					init_pos = trail.size()-1;
 				}
+				int back_lev = 0;
+				if(trail_lim.size()>0 && trail.size()>0) {
+					assert(init_pos >= 0 && init_pos < trail.size());
+					Lit p = trail[init_pos];
+					assert(p != lit_Undef);
+					back_lev = level(var(p)) - 1;
+					if(back_lev<0)
+						back_lev=0;
+					if(lowest_re_enqueue<0 || 	trail_lim[back_lev]  < lowest_re_enqueue){
+						lowest_re_enqueue = trail_lim[back_lev];
+					}
+				}
+
+
 				theories[theoryID]->backtrackUntil(back_lev);//or back_lev -1?
 			}
 
@@ -2153,7 +2162,7 @@ lbool Solver::search(int nof_conflicts) {
 	n_theory_decision_rounds+=using_theory_decisions;
 	for (;;) {
 		static int iter = 0;
-		if (++iter == 16237) {//3150 //3144
+		if (++iter == 20) {//3150 //3144
 			int a = 1;
 		}
 

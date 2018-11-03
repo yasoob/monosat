@@ -26,6 +26,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -146,6 +147,105 @@ public class BitVectorTest {
     assertTrue("BV1 < BV2", v1 < v2);
   }
 
+  @Test
+  public void testSets(){
+    Solver s = new Solver();
+    BitVector bv = new BitVector(s, 4);
+    ArrayList<Long> vals = new ArrayList<>();
+    vals.add(1L);
+    vals.add(3L);
+    vals.add(5L);
+
+    Lit contained = bv.containedIn(vals);
+    assertTrue(s.solve(contained));
+    long v = bv.value();
+    assertTrue(vals.contains(v));
+    assertTrue(s.solve(contained.not()));
+    assertFalse(vals.contains(bv.value()));
+
+    assertFalse(s.solve(contained, bv.eq(2L)));
+    assertTrue(s.solve(contained, bv.eq(3L)));
+    assertFalse(s.solve(contained.not(), bv.eq(3L)));
+  }
+    @Test
+    public void testEmptySets(){
+        Solver s = new Solver();
+        BitVector bv = new BitVector(s, 4);
+        ArrayList<Long> vals = new ArrayList<>();
+        Lit contained = bv.containedIn(vals);
+        assertFalse(s.solve(contained));
+        assertTrue(s.solve(contained.not()));
+    }
+    @Test
+    public void testMultipleSets(){
+        Solver s = new Solver();
+        BitVector bv = new BitVector(s, 4);
+        ArrayList<Long> vals = new ArrayList<>();
+        vals.add(1L);
+        vals.add(3L);
+        vals.add(5L);
+
+        ArrayList<Long> vals2 = new ArrayList<>();
+        vals2.add(1L);
+        vals2.add(3L);
+        vals2.add(5L);
+        vals2.add(2L);
+
+        ArrayList<Long> vals3 = new ArrayList<>();
+        vals3.add(0L);
+        vals3.add(2L);
+
+        Lit contained = bv.containedIn(vals);
+        Lit contained1b = bv.containedIn(vals);
+
+        assertTrue(s.solve(contained));
+        long v = bv.value();
+        assertTrue(vals.contains(v));
+        assertTrue(s.solve(contained.not()));
+        assertTrue(s.solve(contained1b));
+        assertFalse(s.solve(contained,contained1b.not()));
+
+        Lit contained2 = bv.containedIn(vals2);
+        assertTrue(s.solve(contained2));
+        assertTrue(vals2.contains(bv.value()));
+        assertTrue(s.solve(contained2,contained.not()));
+        assertTrue(vals2.contains(bv.value()));
+        assertEquals(bv.value(),2L);
+        assertFalse(s.solve(contained2.not(),contained));
+
+        Lit contained3 = bv.containedIn(vals3);
+        assertTrue(s.solve(contained3));
+        assertTrue(s.solve(contained2,contained3));
+        assertEquals(bv.value(),2L);
+        assertFalse(s.solve(contained,contained3));
+        assertTrue(s.solve(contained.not(),contained3));
+        assertTrue(s.solve(contained2.not(),contained3));
+        assertEquals(bv.value(),0L);
+    }
+
+    @Test
+    public void testSetsLargeValues(){
+        Solver s = new Solver();
+        BitVector bv = new BitVector(s, 4);
+        ArrayList<Long> vals = new ArrayList<>();
+        try {
+            bv.containedIn(16);
+            fail("Maximum BV size is 15");
+        } catch (IllegalArgumentException except) {
+            // ok
+        }
+        try {
+            bv.containedIn(-1);
+            fail("Minimum BV size is 0");
+        } catch (IllegalArgumentException except) {
+            // ok
+        }
+
+        Lit contained = bv.containedIn(vals);
+        assertTrue(s.solve(contained));
+        long v = bv.value();
+        assertTrue(vals.contains(v));
+    }
   @Test
   public void lt() {
     Solver s = new Solver();

@@ -20,10 +20,10 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 */
 package monosat;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.LongBuffer;
+import java.util.*;
 
 /**
  * A fixed-width BitVector representing an unsigned, non-wrapping integer value
@@ -718,7 +718,78 @@ public final class BitVector {
     // Comparison c should never be null
     throw new NullPointerException();
   }
+  /**
+   * Returns a literal that is True if this bitvector is equal to any value in `values`,
+   * and False otherwise. If values is empty, the returned literal is always False.
+   * @param values Zero or more concrete values. If the bitvector is equal to at least
+   *               one of them, the returned literal evaluates to true; otherwise it evaluates to false.
+   * @return A literal that is true if and only if this bitvector is equal to one of the values.
+   */
+  public Lit containedIn(int... values){
+    ArrayList<Long> vals = new ArrayList<>();
+    for(long l:values){
+      vals.add(l);
+    }
+    return containedIn(vals);
+  }
 
+  /**
+   * Returns a literal that is True if this bitvector is equal to any value in `values`,
+   * and False otherwise. If values is empty, the returned literal is always False.
+   * @param values Zero or more concrete values. If the bitvector is equal to at least
+   *               one of them, the returned literal evaluates to true; otherwise it evaluates to false.
+   * @return A literal that is true if and only if this bitvector is equal to one of the values.
+   */
+  public Lit containedIn(short... values){
+    ArrayList<Long> vals = new ArrayList<>();
+    for(long l:values){
+      vals.add(l);
+    }
+    return containedIn(vals);
+  }
+
+  /**
+   * Returns a literal that is True if this bitvector is equal to any value in `values`,
+   * and False otherwise. If values is empty, the returned literal is always False.
+   * @param values Zero or more concrete values. If the bitvector is equal to at least
+   *               one of them, the returned literal evaluates to true; otherwise it evaluates to false.
+   * @return A literal that is true if and only if this bitvector is equal to one of the values.
+   */
+  public Lit containedIn(long... values){
+    ArrayList<Long> vals = new ArrayList<>();
+    for(long l:values){
+      vals.add(l);
+    }
+    return containedIn(vals);
+  }
+
+  /**
+   * Returns a literal that is True if this bitvector is equal to any value in `values`,
+   * and False otherwise. If values is empty, the returned literal is always False.
+   * @param values Zero or more concrete values. Must be of type Long, Integer, or Short.
+   *               If the bitvector is equal to at least one of them,
+   *               the returned literal evaluates to true; otherwise it evaluates to false.
+   * @return A literal that is true if and only if this bitvector is equal to one of the values.
+   */
+  public <T extends Number> Lit containedIn(Collection<T> values){
+    ByteBuffer b = ByteBuffer.allocateDirect(values.size() * 8);
+    b.order(ByteOrder.LITTLE_ENDIAN);
+    LongBuffer buf = b.asLongBuffer();
+    int index =0;
+    for(Number l:values){
+      if (l instanceof Long) {
+        buf.put(index, (Long) l);
+      }else if (l instanceof Integer){
+        buf.put(index, (Integer) l);
+      }else if (l instanceof Short){
+        buf.put(index, (Short) l);
+      }
+      index++;
+    }
+    int l =  MonosatJNI.newBVSet(solver.getSolverPtr(), solver.bvPtr, this.id,
+            buf,values.size());
+    return solver.toLit(l);
+  }
   /**
    * Creates a new bitvector consisting of the bits
    * [this[0],..,this[size-1],append[0],..,append[append.size()-1]] Does not introduce any new

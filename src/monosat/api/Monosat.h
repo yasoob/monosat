@@ -281,7 +281,9 @@ typedef int64_t Weight;
   int bv_nBits(SolverPtr S, BVTheoryPtr  bv,int bvID);
   int bv_bit(SolverPtr S, BVTheoryPtr  bv,int bvID, int bit);
 
-
+  //Returns a literal that is true if BV's value is equal to one of the values in 'values',
+  //and false otherwise
+  int newBVSetContainment(SolverPtr S, BVTheoryPtr bv, int bvID, Weight* values, int nValues);
 
   int newBVComparison_const_lt(SolverPtr S, BVTheoryPtr bv, int bvID, Weight weight);
   int newBVComparison_bv_lt(SolverPtr S, BVTheoryPtr bv, int bvID, int compareID);

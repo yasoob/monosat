@@ -41,9 +41,12 @@
 #include "monosat/pb/PbSolver.h"
 #include "monosat/routing/FlowRouter.h"
 #include "monosat/api/Circuit.h"
+#include "monosat/bv/BVTheorySolver.h"
+#include "monosat/bv/BVSetTheory.h"
 #include <string>
 #include <cstdio>
 #include <ctime>
+#include <monosat/bv/BVSetTheory.h>
 
 //Helper data structures for the Monosat API, intended for internal use only.
 
@@ -57,6 +60,7 @@ typedef void* posix_timer;
 struct MonosatData{
     Monosat::Circuit<Monosat::SimpSolver> circuit;
     Monosat::BVTheorySolver<int64_t> * bv_theory=nullptr;
+    BVSetTheory<int64_t> * bv_set_theory = nullptr;
     Monosat::FSMTheorySolver * fsm_theory=nullptr;
     PB::PbSolver * pbsolver=nullptr;
     int time_limit = -1;

@@ -54,7 +54,6 @@ public class SolverTest {
     monosat.Solver s = new monosat.Solver();
     Constraints.nqueens(s,4);
     assertTrue(s.solve());
-
   }
 
   @Test
