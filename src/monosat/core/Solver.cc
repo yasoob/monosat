@@ -531,8 +531,8 @@ void Solver::cancelUntil(int lev) {
 				theory_reprop_trail_pos[theoryID] = qhead;
 				assert(theory_init_prop_trail_pos[theoryID] >=0);
 				int init_pos = theory_init_prop_trail_pos[theoryID];
-				if(trail_lim.size()>0 && init_pos<trail_lim[decisionLevel()]){
-					init_pos=trail_lim[decisionLevel()];
+				if(trail_lim.size()>0 && init_pos<trail_lim.last()){
+					init_pos=trail_lim.last();
 				}
 				if(init_pos>=trail.size()){
 					init_pos = trail.size()-1;
@@ -540,16 +540,15 @@ void Solver::cancelUntil(int lev) {
 				int back_lev = 0;
 				if(trail_lim.size()>0 && trail.size()>0) {
 					assert(init_pos >= 0 && init_pos < trail.size());
-					Lit p = trail[init_pos];
-					assert(p != lit_Undef);
-					back_lev = level(var(p)) - 1;
-					if(back_lev<0)
-						back_lev=0;
-					if(lowest_re_enqueue<0 || 	trail_lim[back_lev]  < lowest_re_enqueue){
-						lowest_re_enqueue = trail_lim[back_lev];
-					}
+                    Lit p = trail[init_pos];
+                    assert(p!=lit_Undef);
+                    int back_lev = level(var(p))-1;
+                    if(back_lev<0)
+                        back_lev=0;
+                    if(lowest_re_enqueue<0 || 	trail_lim[back_lev]  < lowest_re_enqueue){
+                        lowest_re_enqueue = trail_lim[back_lev];
+                    }
 				}
-
 
 				theories[theoryID]->backtrackUntil(back_lev);//or back_lev -1?
 			}
