@@ -447,32 +447,33 @@ public:
             assert(reason_marker==assign_true_reason);
             assert(p==set->cond);
             reason.push(toSolver(set->cond));
+            int width = set->getWidth();
+            int bvID = set->getBV();
+            vec<Lit> & bits = bv->getBits(bvID);
+            for(int i = 0;i<width;i++){
+                Lit l = bits[i];
+                if(value(l)==l_True) {
+                    reason.push(toSolver(~l));
+                }else if(value(l)==l_False) {
+                    reason.push(toSolver(l));
+                }
+            }
+        }else if (conditional_map.has(~p) && conditional_map[~p]){
+            BVSet * set = conditional_map[~p];
+            assert(p==~set->cond);
+            assert(reason_marker==assign_false_reason);
+            reason.push(~toSolver(set->cond));
             diffs.clear();
-            findDiffs(set,diffs);
+            if(findDiffs(set,diffs)){
+                throw std::runtime_error("Internal error in bv set theory");
+            }
             // the reason why no values are included is a subset of the literals, such that
             // for each value in values, one differing bit is represented.
             for(Lit l:diffs){
                 assert(value(l)==l_True);
                 reason.push(toSolver(~l));
             }
-        }else if (conditional_map.has(~p) && conditional_map[~p]){
-            BVSet * set = conditional_map[~p];
-            assert(p==~set->cond);
-            int width = set->getWidth();
-            int bvID = set->getBV();
-            vec<Lit> & bits = bv->getBits(bvID);
-            assert(reason_marker==assign_false_reason);
-            reason.push(~toSolver(set->cond));
-            for(int i = 0;i<width;i++){
-                if(!set->equivalent_bits[i]){
-                    Lit l = bits[i];
-                    if(value(l)==l_True) {
-                        reason.push(toSolver(~l));
-                    }else{
-                        reason.push(toSolver(l));
-                    }
-                }
-            }
+
         }else{
             throw std::runtime_error("Bad reason");
         }

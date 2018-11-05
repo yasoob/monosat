@@ -222,7 +222,31 @@ public class BitVectorTest {
         assertTrue(s.solve(contained2.not(),contained3));
         assertEquals(bv.value(),0L);
     }
+  @Test
+  public void testImpliedSets(){
+    Solver s = new Solver();
+    BitVector bv = new BitVector(s, 4);
+    ArrayList<Long> vals = new ArrayList<>();
+    vals.add(1L);
+    vals.add(3L);
+    vals.add(5L);
 
+    ArrayList<Long> vals2 = new ArrayList<>();
+    vals2.add(1L);
+    vals2.add(3L);
+    vals2.add(5L);
+    vals2.add(2L);
+
+    ArrayList<Long> vals3 = new ArrayList<>();
+    vals3.add(0L);
+    vals3.add(2L);
+
+    Lit contained = bv.containedIn(vals);
+    Lit contained2 = bv.containedIn(vals2);
+    Lit contained3 = bv.containedIn(vals3);
+    assertTrue(s.solve(Logic.or(Logic.and(contained2.not()),contained),Logic.and(contained2,contained3.not())));
+    assertFalse(s.solve(Logic.or(Logic.and(contained2.not()),contained),Logic.and(contained2,contained3)));
+  }
     @Test
     public void testSetsLargeValues(){
         Solver s = new Solver();
