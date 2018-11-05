@@ -227,7 +227,6 @@ public class BitVectorTest {
     public void testSetsLargeValues(){
         Solver s = new Solver();
         BitVector bv = new BitVector(s, 4);
-        ArrayList<Long> vals = new ArrayList<>();
         try {
             bv.containedIn(16);
             fail("Maximum BV size is 15");
@@ -241,10 +240,10 @@ public class BitVectorTest {
             // ok
         }
 
-        Lit contained = bv.containedIn(vals);
+        Lit contained = bv.containedIn(4);
         assertTrue(s.solve(contained));
         long v = bv.value();
-        assertTrue(vals.contains(v));
+        assertEquals(v,4);
     }
   @Test
   public void lt() {
@@ -309,6 +308,31 @@ public class BitVectorTest {
     v2 = bv2.value();
     assertTrue("BV1 != BV2", v1 != v2);
   }
+
+
+  @Test
+  public void eqConst() {
+    Solver s = new Solver();
+    BitVector bv1 = new BitVector(s, 4);
+    BitVector bv2 = new BitVector(s, 4);
+    Lit c = bv1.eq(3);
+    assertTrue(s.solve(c));
+    long v1 = bv1.value();
+
+    assertEquals(v1, 3);
+    assertTrue(s.solve(c.not()));
+    v1 = bv1.value();
+    assertTrue(v1!=3);
+    Lit d = bv1.eq(3);
+    assertEquals(c,d);
+    Lit e = bv1.neq(3);
+    assertEquals(c,e.not());
+    Lit f = bv1.neq(4);
+    assertTrue(s.solve(c,f));
+    v1 = bv1.value();
+    assertTrue(v1==3 || v1==4);
+  }
+
 
   @Test
   public void eqConstAdd() {

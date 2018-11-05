@@ -8672,11 +8672,11 @@ public:
 		if (to < 0) {
 			std::stringstream ss;
 			ss << to;
-			throw std::runtime_error("Cannot compare Bitvectors to negative values: " + ss.str());
+			throw std::invalid_argument("Cannot compare Bitvectors to negative values: " + ss.str());
 		} else if (to > max_val) {
 			std::stringstream ss;
 			ss << to;
-			throw std::runtime_error("Cannot compare Bitvectors to value outside of bitwidth range: " + ss.str());
+			throw std::invalid_argument("Cannot compare Bitvectors to value outside of bitwidth range: " + ss.str());
 		}
 
 		if (to <= 0 && op == Comparison::geq) {
@@ -9093,8 +9093,7 @@ public:
 		}
 
 	    //there is room to improve this by
-        //operating at the bit level if bvID has bits,
-        //and by making these comparisons one sided if they are min or max val.
+        //making these comparisons one sided if they are min or max val.
         if(isEquality) {
             Lit a = newComparison(Comparison ::geq,bvID,to);
             Lit b = newComparison(Comparison ::leq,bvID,to);
@@ -9108,6 +9107,23 @@ public:
             addClause(a, ~c);
             addClause(b, ~c);
             addClause(c, ~a, ~b);
+			if(getBits(bvID).size()==getWidth(bvID)){
+				vec<Lit> notMatches;
+				notMatches.push(c);
+				for(int i = 0;i<getWidth(bvID);i++){
+					Lit l = getBits(bvID)[i];
+					//Lit expect = getBitFromConst(to,i) ? True():~True();
+					bool expect = getBitFromConst(to,i);
+					if(expect){
+						notMatches.push(~l);
+						addClause(l,~c);
+					}else{
+						notMatches.push(l);
+						addClause(~l,~c);
+					}
+				}
+				addClause(notMatches);
+			}
 			equalities.insert(to, c,lit_Undef);
 			eq_consts[bvID].push(to);
             return c;
@@ -9124,6 +9140,25 @@ public:
             addClause(a, ~c);
             addClause(b, ~c);
             addClause(c, ~a, ~b);
+
+            if(getBits(bvID).size()==getWidth(bvID)){
+				vec<Lit> notMatches;
+				notMatches.push(c);
+                for(int i = 0;i<getWidth(bvID);i++){
+                    Lit l = getBits(bvID)[i];
+                    //Lit expect = getBitFromConst(to,i) ? True():~True();
+                    bool expect = getBitFromConst(to,i);
+                    if(expect){
+                        notMatches.push(~l);
+                        addClause(l,~c);
+                    }else{
+                        notMatches.push(l);
+                        addClause(~l,~c);
+                    }
+                }
+				addClause(notMatches);
+            }
+
             equalities.insert(to, c,lit_Undef);
 			eq_consts[bvID].push(to);
             return ~c;

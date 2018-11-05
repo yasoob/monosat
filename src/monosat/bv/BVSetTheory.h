@@ -46,6 +46,7 @@ class BVSetTheory: public Theory {
      * bitvector must not be one of these values.
      */
     struct BVSet{
+        bool preprocessed=false;
         BVSets * belongsTo;
         Lit cond=lit_Undef;
         IntSet<Weight> values;
@@ -146,7 +147,7 @@ public:
 
 	CRef assign_false_reason;
 	CRef assign_true_reason;
-
+    CRef assign_bit_reason;
 	vec<Lit> reasons;
 
 	vec<Lit> tmp_clause;
@@ -167,11 +168,20 @@ public:
 		S->addTheory(this);
         this->bv = bv;
 		assign_false_reason=S->newReasonMarker(this);
+        assign_true_reason=S->newReasonMarker(this);
+        assign_bit_reason =S->newReasonMarker(this);
 	}
 	~BVSetTheory() {
 	}
     Lit newSet(int bvID,const vec<Weight> & vals){
         IntSet<Weight> uniqueVals;
+        for(const Weight & val:vals) {
+            if (val < 0) {
+                std::stringstream ss;
+                ss << val;
+                throw std::invalid_argument("Cannot compare Bitvectors to negative values: " + ss.str());
+            }
+        }
         uniqueVals.insertAll(vals);
         return newSet(bvID,uniqueVals);
     }
@@ -191,6 +201,19 @@ public:
         if(vals.size()==0){
             return ~S->True();
         }else {
+            Weight max_val = evalBit<Weight>(sets.bvwidth)-1;
+            for(const Weight & val:vals){
+                if (val < 0) {
+                    std::stringstream ss;
+                    ss << val;
+                    throw std::invalid_argument("Cannot compare Bitvectors to negative values: " + ss.str());
+                } else if (val > max_val) {
+                    std::stringstream ss;
+                    ss << val;
+                    throw std::invalid_argument("Cannot compare Bitvectors to value outside of bitwidth range: " + ss.str());
+                }
+            }
+
             Lit solverLit = mkLit(S->newVar());
             Lit l = mkLit(S->newTheoryVar(var(solverLit), getTheoryIndex(), var(solverLit)));
             set = sets.newSet(l, vals);
@@ -340,17 +363,19 @@ public:
         for(BVSet * set:sets.sets){
             Lit cond = set->cond;
             bool anyValsIncluded=false;
+            bool allBitsSet = true;
             bool allNonEquivalentBitsSet = true;
             for(int i = 0;i<width;i++) {
                 lbool v = value(bits[i]);
-                if(!set->equivalent_bits[i]) {
+               // if(!set->equivalent_bits[i]) {
                     if (v == l_Undef) {
-                        allNonEquivalentBitsSet = false;
+                        allBitsSet = false;
+                        break;
                     }
-                }
+               // }
             }
             anyValsIncluded = findDiffs(set,diffs);
-
+            //todo: if some of the sets are assigned, we can intersect and difference them to find the set of acceptable remaining values.
             if(value(cond)==l_True){
                 if(!anyValsIncluded){
                     conflict.push(toSolver(~cond));
@@ -364,32 +389,30 @@ public:
                     return false;
                 }
             }else if(value(cond)==l_False){
-                if(allNonEquivalentBitsSet && anyValsIncluded){
+                if(allBitsSet && anyValsIncluded){
                     //the reason for the conflict is that the bv equals one of the values exactly.
                     //we can remove any bits that match all other values. The set of such bits can be computed
                     //once per set
                     conflict.push(toSolver(cond));
                     for(int i = 0;i<width;i++){
-                        if(!set->equivalent_bits[i]){
+                        //if(!set->equivalent_bits[i]){
                             Lit l = bits[i];
                             if(value(l)==l_True) {
                                 conflict.push(toSolver(~l));
-                            }else{
+                            }else if (value(l)==l_False){
                                 conflict.push(toSolver(l));
                             }
-                        }
+                      //  }
                     }
                     stats_conflicts++;
                     return false;
                 }
-            }else if (allNonEquivalentBitsSet){
-
-                if(anyValsIncluded){
-                    S->enqueue(toSolver(cond),assign_true_reason);
-
-                }else{
-                    S->enqueue(~toSolver(cond),assign_false_reason);
-                }
+            }else if (!anyValsIncluded){
+                S->enqueue(~toSolver(cond),assign_false_reason);
+            }else if (allBitsSet && anyValsIncluded){
+                //todo: We can improve this, if all remaining unset bit combinations
+                //are still in the set, then we can also conclude the condition holds
+                S->enqueue(toSolver(cond),assign_true_reason);
             }
         }
         return true;
@@ -500,11 +523,13 @@ public:
         sort(all_bvs);
         for(int bvID:all_bvs){
             BVSets & sets = getSets(bvID);
+            vec<Lit> & bits = bv->getBits(sets.getBV());
             //find all relevant comparisons/equalities
             for(Weight & to:bv->getConstantEqualities(bvID)){
                 Lit l = bv->getConstantEquality(bvID, to);
                 for(BVSet * set:sets.sets){
                     Lit cond = toSolver(set->cond);
+                    //todo: avoid adding these clauses if we've already processed this equality and this set
                     if(set->hasValue(to)){
                         //if this set is true, then this equality comparison must also be true
                         S->addClause(l,~cond);
@@ -516,11 +541,32 @@ public:
                     }
                 }
             }
+            for(BVSet * set:sets.sets){
+                if(!set->preprocessed) {
+                    Lit cond = toSolver(set->cond);
+                    const Weight &w = set->values[0];//pick an arbitrary element
+                    //any bits that are equal in all values are forced to fixed assignments if cond is true
+                    for (int i = 0; i < set->getWidth(); i++) {
+                        if (set->equivalent_bits[i]) {
+                            Lit bit = toSolver(bits[i]);
+                            bool expected = bv->getBitFromConst(w, i);
+                            if (expected) {
+                                S->addClause(~cond, bit);
+                            } else {
+                                S->addClause(~cond, ~bit);
+                            }
+                        }
+                    }
+                }
+            }
             for(int i =0;i<sets.sets.size();i++){
                 BVSet * set1 = sets.sets[i];
                 Lit cond1 = toSolver(set1->cond);
                 for(int j = i+1;j<sets.sets.size();j++){
                     BVSet * set2 = sets.sets[j];
+                    if (set1->preprocessed && set2->preprocessed){
+                        continue;
+                    }
                     Lit cond2 = toSolver(set2->cond);
                     if(set1->anyValsInCommon(set2)){
                         if(set1->allValsContainedIn(set2)){
@@ -541,6 +587,9 @@ public:
                 }
             }
 
+            for(BVSet * set:sets.sets) {
+                set->preprocessed = true;
+            }
             //sort sets into partial order
             sort(sets.sets,SetContainmentLT());
         }
