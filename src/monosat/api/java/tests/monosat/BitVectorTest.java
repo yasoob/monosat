@@ -247,28 +247,40 @@ public class BitVectorTest {
     assertTrue(s.solve(Logic.or(Logic.and(contained2.not()),contained),Logic.and(contained2,contained3.not())));
     assertFalse(s.solve(Logic.or(Logic.and(contained2.not()),contained),Logic.and(contained2,contained3)));
   }
-    @Test
-    public void testSetsLargeValues(){
-        Solver s = new Solver();
-        BitVector bv = new BitVector(s, 4);
-        try {
-            bv.containedIn(16);
-            fail("Maximum BV size is 15");
-        } catch (IllegalArgumentException except) {
-            // ok
-        }
-        try {
-            bv.containedIn(-1);
-            fail("Minimum BV size is 0");
-        } catch (IllegalArgumentException except) {
-            // ok
-        }
-
-        Lit contained = bv.containedIn(4);
-        assertTrue(s.solve(contained));
-        long v = bv.value();
-        assertEquals(v,4);
+  @Test
+  public void testSetsOverflow(){
+    Solver s = new Solver();
+    BitVector bv = new BitVector(s, 4);
+    try {
+      bv.containedIn(16);
+      fail("Maximum BV size is 15");
+    } catch (IllegalArgumentException except) {
+      // ok
     }
+    try {
+      bv.containedIn(-1);
+      fail("Minimum BV size is 0");
+    } catch (IllegalArgumentException except) {
+      // ok
+    }
+
+    Lit contained = bv.containedIn(4);
+    assertTrue(s.solve(contained));
+    long v = bv.value();
+    assertEquals(v,4);
+  }
+  @Test
+  public void testSetsLargeValues(){
+      Solver s = new Solver();
+      BitVector bv = new BitVector(s, 63);
+      long LARGE = 1L<<62;
+      Lit l = bv.containedIn(LARGE,LARGE-1,LARGE-2, LARGE-3);
+
+      assertTrue(s.solve(l));
+      long v = bv.value();
+      assertTrue(v>=LARGE-4);
+      assertTrue(v<=LARGE);
+  }
   @Test
   public void lt() {
     Solver s = new Solver();

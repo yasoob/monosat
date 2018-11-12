@@ -27,7 +27,7 @@
 #include "monosat/core/Theory.h"
 #include "monosat/core/Solver.h"
 #include "monosat/bv/BVTheorySolver.h"
-
+#include <set>
 namespace Monosat {
 
 
@@ -49,12 +49,14 @@ class BVSetTheory: public Theory {
         bool preprocessed=false;
         BVSets * belongsTo;
         Lit cond=lit_Undef;
-        IntSet<Weight> values;
+        std::set<Weight> values;
         vec<bool> equivalent_bits;//true for the indexes of bits that are equal in all values
         vec<BVSet*> mutuallyExclusiveSets;
         vec<BVSet*> impliedSets;
-        BVSet(BVSets * outer, Lit cond, const IntSet<Weight> & vals):belongsTo(outer),cond(cond){
-            values.insertAll(vals.toVec());
+        BVSet(BVSets * outer, Lit cond, const std::set<Weight> & vals):belongsTo(outer),cond(cond){
+            for(const Weight & w:vals){
+                values.insert(w);
+            }
         }
         int getWidth(){
             return belongsTo->bvwidth;
@@ -62,15 +64,16 @@ class BVSetTheory: public Theory {
         int getBV(){
         	return belongsTo->bvID;
         }
-        bool hasValue(Weight val){
-            return values.contains(val);
+        bool hasValue(const Weight & val){
+            return values.find(val) != values.end();
         }
         bool anyValsInCommon(BVSet * other){
             if(other->values.size()<values.size()){
                 return other->anyValsInCommon(this);
             }else {
-                for (Weight &v:values) {
-                    if(other->values.contains(v)){
+                //consider using std::set_intersection here
+                for (const Weight &v:values) {
+                    if(other->values.find(v)!= other->values.end()){
                         return true;
                     }
                 }
@@ -78,8 +81,8 @@ class BVSetTheory: public Theory {
             }
         }
         bool allValsContainedIn(BVSet * other){
-            for (Weight &v:values) {
-                if(!other->values.contains(v)){
+            for (const Weight &v:values) {
+                if((other->values.find(v) == other->values.end() )){
                     return false;
                 }
             }
@@ -101,17 +104,17 @@ class BVSetTheory: public Theory {
         	return bvID;
         }
 
-        BVSet* getSet(IntSet<Weight> & find){
+        BVSet* getSet(const std::set<Weight> & find){
 			//is there a better option here than a linear search?
 			for(BVSet * set:sets){
-				if(set->values.equals(find)){
+				if(set->values == find){
 					return set;
 				}
 			}
 			return nullptr;
         }
 
-        BVSet * newSet(Lit l, IntSet<Weight> & vals){
+        BVSet * newSet(Lit l, std::set<Weight> & vals){
             assert(vals.size()>0);
 			BVSet * set = new BVSet(this,l,vals);
             set->equivalent_bits.growTo(bvwidth,false);
@@ -137,7 +140,7 @@ class BVSetTheory: public Theory {
 
 	LMap<BVSet*> conditional_map;
     LMap<int> bv_map;
-    IntSet<Var> bvvars;
+    std::set<Var> bvvars;
 	vec<BVSet*> all_sets;
 
 	vec<BVSets*> bv_sets;
@@ -174,18 +177,18 @@ public:
 	~BVSetTheory() {
 	}
     Lit newSet(int bvID,const vec<Weight> & vals){
-        IntSet<Weight> uniqueVals;
+        std::set<Weight> uniqueVals;
         for(const Weight & val:vals) {
             if (val < 0) {
                 std::stringstream ss;
                 ss << val;
                 throw std::invalid_argument("Cannot compare Bitvectors to negative values: " + ss.str());
             }
+            uniqueVals.insert(val);
         }
-        uniqueVals.insertAll(vals);
         return newSet(bvID,uniqueVals);
     }
-	Lit newSet(int bvID, IntSet<Weight> & vals){
+	Lit newSet(int bvID, std::set<Weight> & vals){
 		/**
 		 * If this bv overlaps with any other sets, then combine them
 		 * If it _doesn't_ overlap at all with any other sets, then
@@ -224,7 +227,7 @@ public:
     }
 private:
     vec<int> all_bvs;
-    IntSet<int> bvIDsToProp;
+    std::set<int> bvIDsToProp;
     BVSets & getSets(int bvID){
         bv_sets.growTo(bvID+1,nullptr);
         if(bv_sets[bvID]==nullptr){
@@ -288,7 +291,7 @@ public:
 		}
 	}
     bool isBVLit(Lit l){
-        return bvvars.contains(var(l));
+        return bvvars.find(var(l)) != bvvars.end();
     }
 	void enqueueTheory(Lit l) override {
         if(isConditional(l)){
@@ -325,7 +328,7 @@ public:
         int bvID = set->getBV();
         vec<Lit> & bits = bv->getBits(bvID);
         bool anyValsIncluded = false;
-        for(Weight & val:set->values){
+        for(const Weight & val:set->values){
             bool valInSet = true;
             for(int i = 0;i<width;i++){
                 Lit bit = bits[i];
@@ -391,18 +394,15 @@ public:
             }else if(value(cond)==l_False){
                 if(allBitsSet && anyValsIncluded){
                     //the reason for the conflict is that the bv equals one of the values exactly.
-                    //we can remove any bits that match all other values. The set of such bits can be computed
-                    //once per set
+                    //todo: we can remove any bits that match all other values.
                     conflict.push(toSolver(cond));
                     for(int i = 0;i<width;i++){
-                        //if(!set->equivalent_bits[i]){
-                            Lit l = bits[i];
-                            if(value(l)==l_True) {
-                                conflict.push(toSolver(~l));
-                            }else if (value(l)==l_False){
-                                conflict.push(toSolver(l));
-                            }
-                      //  }
+                        Lit l = bits[i];
+                        if(value(l)==l_True) {
+                            conflict.push(toSolver(~l));
+                        }else if (value(l)==l_False){
+                            conflict.push(toSolver(l));
+                        }
                     }
                     stats_conflicts++;
                     return false;
@@ -545,7 +545,7 @@ public:
             for(BVSet * set:sets.sets){
                 if(!set->preprocessed) {
                     Lit cond = toSolver(set->cond);
-                    const Weight &w = set->values[0];//pick an arbitrary element
+                    const Weight &w = *set->values.begin();//pick an arbitrary element
                     //any bits that are equal in all values are forced to fixed assignments if cond is true
                     for (int i = 0; i < set->getWidth(); i++) {
                         if (set->equivalent_bits[i]) {

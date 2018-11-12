@@ -769,9 +769,13 @@ void minimizeConflictClause(Monosat::SimpSolver * S){
 		for(Lit l:S->conflict){
 			assumptions.push(externalLit(S,~l));
 		}
-		int size = minimizeUnsatCore(S,&assumptions[0],assumptions.size());
-		assert(size<=assumptions.size());
-		assert(S->conflict.size()==size);
+		if(assumptions.size()==0){
+		    S->conflict.clear();
+		}else {
+            int size = minimizeUnsatCore(S, &assumptions[0], assumptions.size());
+            assert(size <= assumptions.size());
+            assert(S->conflict.size() == size);
+        }
 	}
 }
 //Load a gnf, but ignore any solve/optimize calls

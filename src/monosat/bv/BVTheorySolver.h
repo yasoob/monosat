@@ -44,6 +44,7 @@
 #include <exception>
 #include "monosat/api/Circuit.h"
 #include <map>
+#include <map>
 namespace Monosat {
 template<typename Weight>
 class BVTheorySolver;
@@ -5088,8 +5089,8 @@ public:
 	vec<vec<int> > compares; //for each bitvector, comparisons are all to unique values, and in ascending order of compareTo.
 	vec<vec<int>> bvcompares;
 
-	vec<IntMap<Weight,Lit>> eqs; //for each bitvector, eqs contains all unique values that each BV is either equality or !equality compared to, in ascending order
-	vec<vec<Weight>> eq_consts;
+	vec<std::map<Weight,Lit>*> eqs; //for each bitvector, eqs contains all unique values that each BV is either equality or !equality compared to, in ascending order
+	vec<vec<Weight>> eq_consts;//all unique constants that each bitvector has an equality/neq comparison to.
 	vec<int> eq_bitvectors;//if a bv has been proven to be equivalent to another, lower index bv, put the lowest such index here.
 	vec<bool> bv_needs_propagation;
 	vec<bool> comparison_needs_repropagation;
@@ -8010,7 +8011,8 @@ public:
 		alteredBV.growTo(bvID+1);
 		bvcompares.growTo(bvID+1);
 		compares.growTo(bvID+1);
-		eqs.growTo(bvID+1);
+		eqs.growTo(bvID+1,nullptr);
+		eqs[bvID] = new std::map<Weight,Lit>();
 		eq_consts.growTo(bvID+1);
 		bvconst.growTo(bvID+1);
 		operation_ids.growTo(bvID+1);
@@ -8262,7 +8264,8 @@ public:
 		alteredBV.growTo(bvID+1);
 		bvcompares.growTo(bvID+1);
 		compares.growTo(bvID+1);
-		eqs.growTo(bvID+1);
+		eqs.growTo(bvID+1,nullptr);
+		eqs[bvID] = new std::map<Weight,Lit>();
 		eq_consts.growTo(bvID+1);
 		operation_ids.growTo(bvID+1);
 		under_causes.growTo(bvID+1);
@@ -8328,7 +8331,8 @@ public:
 		alteredBV.growTo(bvID+1);
 		bvcompares.growTo(bvID+1);
 		compares.growTo(bvID+1);
-		eqs.growTo(bvID+1);
+		eqs.growTo(bvID+1,nullptr);
+		eqs[bvID] = new std::map<Weight,Lit>();
 		eq_consts.growTo(bvID+1);
 		bvconst.growTo(bvID+1);
 		operation_ids.growTo(bvID+1);
@@ -8394,7 +8398,8 @@ public:
 		skip_updates.growTo(bvID+1);
 		bvcompares.growTo(bvID+1);
 		compares.growTo(bvID+1);
-		eqs.growTo(bvID+1);
+		eqs.growTo(bvID+1,nullptr);
+		eqs[bvID] = new std::map<Weight,Lit>();
 		eq_consts.growTo(bvID+1);
 		operation_ids.growTo(bvID+1);
 		under_causes.growTo(bvID+1);
@@ -9063,7 +9068,8 @@ public:
 	    }
 	}
 	bool hasConstantEquality(int bvID, const Weight & to){
-		return eqs[bvID].has(to) &&eqs[bvID][to]!=lit_Undef;
+		std::map<Weight,Lit> & equalities = * eqs[bvID];
+		return equalities.find(to) != equalities.end() &&  equalities[to]!=lit_Undef;
 	}
 	/**
 	 * Returns the solverliteral associated with this equality
@@ -9072,7 +9078,7 @@ public:
 	 * @return
 	 */
 	Lit getConstantEquality(int bvID, const Weight & to){
-		return toSolver(eqs[bvID][to]);
+		return toSolver((*eqs[bvID])[to]);
 	}
 	const vec<Weight> & getConstantEqualities(int bvID){
 		return eq_consts[bvID];
@@ -9080,8 +9086,8 @@ public:
 
     Lit newComparisonEQ(int bvID,const Weight & to, bool isEquality, Var outerVar = var_Undef) {
 		assert(bvID<eqs.size());
-		IntMap<Weight,Lit> & equalities = eqs[bvID];
-		if(equalities.has(to) && equalities[to]!=lit_Undef){
+		std::map<Weight,Lit> & equalities = *eqs[bvID];
+		if(hasConstantEquality(bvID,to)){
 			Lit l = equalities[to];
 			if(!isEquality){
 				l=~l;
@@ -9124,7 +9130,7 @@ public:
 				}
 				addClause(notMatches);
 			}
-			equalities.insert(to, c,lit_Undef);
+			equalities[to]= c;
 			eq_consts[bvID].push(to);
             return c;
         }else{
@@ -9159,7 +9165,7 @@ public:
 				addClause(notMatches);
             }
 
-            equalities.insert(to, c,lit_Undef);
+            equalities[to] = c;
 			eq_consts[bvID].push(to);
             return ~c;
         }
